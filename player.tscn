@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://7x0y3mkti6et"]
+
+[ext_resource type="Script" uid="uid://b483d8vnqbix0" path="res://Player.cs" id="1_4flbx"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_4flbx"]
+
+[sub_resource type="Sky" id="Sky_4flbx"]
+sky_material = SubResource("ProceduralSkyMaterial_4flbx")
+
+[sub_resource type="Environment" id="Environment_onrkg"]
+background_mode = 2
+sky = SubResource("Sky_4flbx")
+ambient_light_color = Color(1, 1, 1, 1)
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_4flbx"]
+
+[node name="player" type="CharacterBody3D" unique_id=152232293 node_paths=PackedStringArray("Camera", "Shape")]
+script = ExtResource("1_4flbx")
+Camera = NodePath("camera")
+Shape = NodePath("shape")
+
+[node name="camera" type="Camera3D" parent="." unique_id=658672035]
+transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 0, 1.5, 0)
+environment = SubResource("Environment_onrkg")
+
+[node name="shape" type="CollisionShape3D" parent="." unique_id=706636824]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_sh265")
+
+[node name="capsule" type="CSGMesh3D" parent="." unique_id=659492021]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_4flbx")
