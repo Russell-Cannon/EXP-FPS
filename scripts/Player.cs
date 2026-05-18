@@ -1,6 +1,6 @@
 using Godot;
 using GodotSteam;
-using System;
+
 public struct MovementSettings
 {
 	public float MaxSpeed, Acceleration, Deceleration;
@@ -50,6 +50,8 @@ public partial class Player : CharacterBody3D
 			MoveInput.Y = 0;
 		}
 		
+		MoveInput = MoveInput.Normalized();
+
 		if (@event is InputEventMouseMotion motion) {
 			Vector2 distance = new(-Mathf.DegToRad((float)(motion.Relative.X * 0.125f)), Mathf.DegToRad((float)(motion.Relative.Y * 0.125f)));
 			RotateY(distance.X);
@@ -77,6 +79,7 @@ public partial class Player : CharacterBody3D
 		if (col != null) {
 			Collide(col);
 		}
+		GD.Print(new Vector3(Velocity.X, 0, Velocity.Z).Length());
 	}
 
 //physics
@@ -105,68 +108,13 @@ public partial class Player : CharacterBody3D
 		// The players wants to go as fast as possible times whether or not they even want to move
 		float wishspeed = wishdir.Length() * airSettings.MaxSpeed;
 
-		// If the player is ONLY strafing left or right
-		if (MoveInput.Y == 0 && MoveInput.X != 0) {
-			//Clamp desired speed to max speed
-			if (wishspeed > strafeSettings.MaxSpeed) {
-				wishspeed = strafeSettings.MaxSpeed;
-			}
-			Acceleration = strafeSettings.Acceleration;
-		} else { // Otherwise moving forwards/backwards or diagonnaly
-			//If moving forwards: accelerate. If moving backwards: decelerate
-			if (Velocity.Dot(wishdir) > 0) {
-				Acceleration = airSettings.Acceleration;
-			} else {
-				Acceleration = airSettings.Deceleration;
-			}
+		if (Velocity.Dot(wishdir) > 0) {
+			Acceleration = airSettings.Acceleration;
+		} else {
+			Acceleration = airSettings.Deceleration;
 		}
 
-		//Accelerate 
 		Accelerate(wishdir, wishspeed, Acceleration, delta);
-
-		//Apply air control 
-		AirControl(wishdir, wishspeed, delta);
-	}
-	private void AirControl(Vector3 targetDir, float wishspeed, double delta) {
-		// Air strafe the player is in the air
-		// Allows players to move turn mid-air (corner)
-
-		// Only control air movement when moving forward or backward and actually moving
-		if (MoveInput.Y == 0 || Mathf.Abs(wishspeed) < 0.001)
-			return;
-
-		//Store how much velocity is facing downwards and remove it
-		Vector3 ySpeed = Velocity.Project(Vector3.Down); 
-		Velocity -= Velocity.Project(Vector3.Down); 
-
-		//Store the current speed then remove it from the player
-		float speed = Velocity.Length();
-		Velocity = Velocity.Normalized();
-
-		//Get the distance between where the player is going and where they want to go
-		float dot = Velocity.Dot(targetDir);
-		double k = 32;
-		k *= airControl * dot * dot * delta; //!!!
-
-		Vector3 xSpeed = Velocity.Project(GlobalBasis.X);
-		Vector3 zSpeed = Velocity.Project(GlobalBasis.Z); 
-
-		// Change direction while slowing down.
-		if (dot > 0) {
-			Velocity = Vector3.Zero;
-
-			xSpeed *= (float)(speed + targetDir.X * k);
-			zSpeed *= (float)(speed + targetDir.Z * k);
-
-			Velocity += xSpeed + zSpeed;
-
-			Velocity = Velocity.Normalized();//change direction
-		}
-
-		//Restore speed
-		Velocity *= speed;
-		//Restore downwards velocity
-		Velocity += ySpeed;
 	}
 
 	private void GroundMove(double delta) {
@@ -196,19 +144,16 @@ public partial class Player : CharacterBody3D
 			speedLoss = speed;
 
 		//Lower velocity by the ratio of new speed to current speed
-		Velocity *= (speed - speedLoss) / speed;
+		if (speed != 0)
+			Velocity *= (speed - speedLoss) / speed;
 	}
 
 	private void Accelerate(Vector3 targetDir, double targetSpeed, double accel, double delta) {
-		// Calculates acceleration based on desired speed and direction.
+		// Accelerate towards the desired direction.
 		// Get how much of our velocity is towards were we want to go.
 		double currentspeed = Velocity.Dot(targetDir);
 		// Get how much speed we have left to gain.
 		double addspeed = targetSpeed - currentspeed;
-		// If going faster than we want: don't slow down
-		if (addspeed <= 0)
-			return;
-
 		// Get how much speed should be added per second
 		double accelspeed = accel * delta * targetSpeed;
 		// Don't add enough speed to overpass the max speed

@@ -1,22 +1,48 @@
 [gd_scene format=3 uid="uid://g5nkqqtlf8ql"]
 
 [ext_resource type="PackedScene" uid="uid://7x0y3mkti6et" path="res://player.tscn" id="1_ig7tw"]
+[ext_resource type="Material" uid="uid://ifvsgdvidfb" path="res://art/materials/test.tres" id="2_0xm2m"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0xm2m"]
+size = Vector3(5000, 1, 5000)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_h2yge"]
+size = Vector3(10, 10, 10)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_7dm0k"]
-size = Vector3(25, 1, 25)
+size = Vector3(2, 2, 2)
 
 [node name="Node3D" type="Node3D" unique_id=759198937]
 
 [node name="player" parent="." unique_id=152232293 instance=ExtResource("1_ig7tw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4259292, 0)
 
 [node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1119647365]
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=1017465844]
+[node name="Floor" type="CollisionShape3D" parent="StaticBody3D" unique_id=1017465844]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("BoxShape3D_0xm2m")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D/Floor" unique_id=357923709]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.00082969666, 0.011519432, -0.0025043488)
+size = Vector3(5000, 1, 5000)
+material = ExtResource("2_0xm2m")
+
+[node name="Cube" type="CollisionShape3D" parent="StaticBody3D" unique_id=1499022799]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.115585, 5.01944, 0)
+shape = SubResource("BoxShape3D_h2yge")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D/Cube" unique_id=1150998057]
+size = Vector3(10, 10, 10)
+material = ExtResource("2_0xm2m")
+
+[node name="Cube2" type="CollisionShape3D" parent="StaticBody3D" unique_id=40383759]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.979417, 1.0146388, 1.3254757)
 shape = SubResource("BoxShape3D_7dm0k")
 
-[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D/CollisionShape3D" unique_id=357923709]
-size = Vector3(25, 1, 25)
+[node name="CSGBox3D" type="CSGBox3D" parent="StaticBody3D/Cube2" unique_id=2031325349]
+size = Vector3(2, 2, 2)
+material = ExtResource("2_0xm2m")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=1505251709]
 transform = Transform3D(1, 0, 0, 0, -0.50000006, 0.8660254, 0, -0.8660254, -0.50000006, 0, 5, 0)
