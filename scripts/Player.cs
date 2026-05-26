@@ -20,10 +20,10 @@ public partial class Player : CharacterBody3D
 	public Vector2 MoveInput;
 	Vector3 groundSurfaceNormal = Vector3.Up;
 	float airControl = 0.3f;
-	MovementSettings groundSettings = new(7, 14, 10), airSettings = new(7, 2, 2), strafeSettings = new(1, 50, 50);
+	MovementSettings groundSettings = new(7, 14, 10), airSettings = new(7, 2, 2);
 	Buffer jump = new(0.125f);
 	const float MASS = 70;
-
+	bool applyGravity = true;
 
 	//Godot calls
 	public override void _Ready() {
@@ -35,17 +35,17 @@ public partial class Player : CharacterBody3D
 			jump.Set();
 
 		if (Input.IsActionPressed("move_right")) {
-			MoveInput.X = -1;
-		} else if (Input.IsActionPressed("move_left")) {
 			MoveInput.X = 1;
+		} else if (Input.IsActionPressed("move_left")) {
+			MoveInput.X = -1;
 		} else {
 			MoveInput.X = 0;
 		}
 
 		if (Input.IsActionPressed("move_up")) {
-			MoveInput.Y = 1;
-		} else if (Input.IsActionPressed("move_down")) {
 			MoveInput.Y = -1;
+		} else if (Input.IsActionPressed("move_down")) {
+			MoveInput.Y = 1;
 		} else {
 			MoveInput.Y = 0;
 		}
@@ -55,8 +55,8 @@ public partial class Player : CharacterBody3D
 		if (@event is InputEventMouseMotion motion) {
 			Vector2 distance = new(-Mathf.DegToRad((float)(motion.Relative.X * 0.125f)), Mathf.DegToRad((float)(motion.Relative.Y * 0.125f)));
 			RotateY(distance.X);
- 			Camera.RotateX(distance.Y);
-			ClampHead();
+			float rotation = Mathf.Clamp(Camera.Rotation.X - distance.Y, -GodotMath.HALF_PI, GodotMath.HALF_PI) - Camera.Rotation.X;
+			Camera.RotateX(rotation);
 		}
 	}
 	public override void _PhysicsProcess(double delta) {
@@ -71,7 +71,9 @@ public partial class Player : CharacterBody3D
 			AirMove(delta);
 			groundSurfaceNormal = Vector3.Up;
 		}
-		Velocity += Vector3.Down * (float)(gravity * delta); //v = a*t //Apply gravity
+
+		if (applyGravity)
+			Velocity += Vector3.Down * (float)(gravity * delta); //v = a*t //Apply gravity
 
 		MoveAndSlide();
 
@@ -79,7 +81,7 @@ public partial class Player : CharacterBody3D
 		if (col != null) {
 			Collide(col);
 		}
-		GD.Print(new Vector3(Velocity.X, 0, Velocity.Z).Length());
+		GD.Print(GodotMath.XZ(Velocity).Length());
 	}
 
 //physics
@@ -160,6 +162,10 @@ public partial class Player : CharacterBody3D
 		if (accelspeed > addspeed)
 			accelspeed = addspeed;
 
+		// Subtract amount of speed we intend to gain
+		if (GodotMath.XZ(Velocity).Length() > targetSpeed)
+			Velocity -= (float)accelspeed * GodotMath.XZ(Velocity).Normalized();
+		
 		// Add velocity
 		Velocity += (float)accelspeed*targetDir;
 	}
@@ -184,9 +190,5 @@ public partial class Player : CharacterBody3D
 		}
 		//Stop the jump buffer here
 		jump.Cancel();
-	}
-	void ClampHead() {
-		//Stop the camera from looking too far up or down
-		Camera.Rotation = new Vector3(Mathf.Clamp(Camera.Rotation.X, -GodotMath.HALF_PI, GodotMath.HALF_PI), Camera.Rotation.Y, Camera.Rotation.Z);
 	}
 }

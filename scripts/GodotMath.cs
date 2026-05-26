@@ -17,6 +17,10 @@ public class GodotMath {
 		b = b.Orthonormalized();
 		return b;
     }
+    public static Vector3 XZ(Vector3 Vector)
+    {
+        return new Vector3(Vector.X, 0, Vector.Z);
+    }
 
 	public static bool AboutEqual(Vector3 a, Vector3 b, float epsilon) {
 		return AboutEqual(a.X, b.X, epsilon) && AboutEqual(a.Y, b.Y, epsilon) && AboutEqual(a.Z, b.Z, epsilon);
