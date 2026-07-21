@@ -1,17 +1,6 @@
 using Godot;
 using GodotSteam;
 
-public struct MovementSettings
-{
-	public float MaxSpeed, Acceleration, Deceleration;
-	public MovementSettings(float maxSpeed, float accel, float decel)
-	{
-		MaxSpeed = maxSpeed;
-		Acceleration = accel;
-		Deceleration = decel;
-	}
-}
-
 public partial class Player : CharacterBody3D
 {
 	[Export] double gravity = 20, jumpForce = 7, roofRebound = 1f, friction = 6, slideForce = 12;
@@ -20,7 +9,8 @@ public partial class Player : CharacterBody3D
 	public Vector2 MoveInput;
 	Vector3 groundSurfaceNormal = Vector3.Up;
 	float airControl = 0.3f;
-	MovementSettings groundSettings = new(7, 14, 10), airSettings = new(7, 2, 2);
+	float maxSpeed = 7;
+	float maxAcceleration = 1;
 	Buffer jump = new(0.125f);
 	const float MASS = 70;
 	bool applyGravity = true;
@@ -49,8 +39,11 @@ public partial class Player : CharacterBody3D
 		} else {
 			MoveInput.Y = 0;
 		}
-		
+
 		MoveInput = MoveInput.Normalized();
+
+		if (Input.IsActionJustPressed("move_kick"))
+			Kick();
 
 		if (@event is InputEventMouseMotion motion) {
 			Vector2 distance = new(-Mathf.DegToRad((float)(motion.Relative.X * 0.125f)), Mathf.DegToRad((float)(motion.Relative.Y * 0.125f)));
@@ -62,13 +55,9 @@ public partial class Player : CharacterBody3D
 	public override void _PhysicsProcess(double delta) {
 		// Set Move		
 		if (IsOnFloor()) {
-			if (jump.Active) { //Jump the second we hit the floor without applying friction
-				Jump();
-			} else {
-				GroundMove(delta);
-			}
+			GroundMove((float)delta);
 		} else {
-			AirMove(delta);
+			AirMove((float)delta);
 			groundSurfaceNormal = Vector3.Up;
 		}
 
@@ -101,75 +90,38 @@ public partial class Player : CharacterBody3D
 			groundSurfaceNormal = normal;
 		}
 	}
-	private void AirMove(double delta)
+
+	private Vector3 getWishDirection()
 	{
-		float Acceleration;
+		return (MoveInput.X * GlobalBasis.X) + (MoveInput.Y * GlobalBasis.Z);
+	}
+	private void AirMove(float delta)
+	{
+		//Accelerate if not going as fast as possible
+		if (GodotMath.XZ(Velocity).Length() < maxSpeed)
+			Accelerate(delta);
+		//Decelerate if trying to
+		else if (getWishDirection().Dot(GodotMath.XZ(Velocity)) < 0)
+			Accelerate(delta);
+	}
 
-		// Get the direction the player wants to go in place
-		var wishdir = (MoveInput.X * GlobalBasis.X) + (MoveInput.Y * GlobalBasis.Z);
-		// The players wants to go as fast as possible times whether or not they even want to move
-		float wishspeed = wishdir.Length() * airSettings.MaxSpeed;
-
-		if (Velocity.Dot(wishdir) > 0) {
-			Acceleration = airSettings.Acceleration;
+	private void GroundMove(float delta) {
+		if (jump.Active) { //Jump the second we hit the floor without applying friction
+			Jump();
 		} else {
-			Acceleration = airSettings.Deceleration;
+			Accelerate(delta);
 		}
-
-		Accelerate(wishdir, wishspeed, Acceleration, delta);
 	}
-
-	private void GroundMove(double delta) {
-		// Handle ground movement.
-		ApplyFriction(delta);
-
-		//Convert the players input to a vector pointing where the player wants to go
-		Vector3 realDir = (MoveInput.X * GlobalBasis.X) + (MoveInput.Y * GlobalBasis.Z);
-		//Align that vector such that walking forward on a slope is actually partially walking downwards
-		realDir = GodotMath.AlignUpToNormal(groundSurfaceNormal, realDir).Z;
-		
-		//Accelerate the player towards where they want to go
-		Accelerate(realDir, MoveInput.Length() * groundSettings.MaxSpeed, groundSettings.Acceleration, delta);
+	public void Accelerate(float delta)
+	{
+		// Calculate new velocity after lerping
+		Vector3 flatVelocity = Lerp.LerpHalfLife(GodotMath.XZ(Velocity), getWishDirection() * maxSpeed, delta, 0.1f);
+		// Reduce change if over acceleration limit
+		if ((Velocity - flatVelocity).Length() > maxAcceleration)
+			flatVelocity = Lerp.MoveTowards(GodotMath.XZ(Velocity), getWishDirection() * maxSpeed, maxAcceleration);
+		// Apply change
+		Velocity = new Vector3(flatVelocity.X, Velocity.Y, flatVelocity.Z); //preserve Y velocity
 	}
-
-	private void ApplyFriction(double delta) {
-		//Get speed
-		float speed = Velocity.Length();
-
-		//Raise friction in the lower bound of speed to keep movement snappy
-		float control = speed < groundSettings.Deceleration ? groundSettings.Deceleration : speed;
-		//Get amount of speed to lose based on current speed * friction per second
-		float speedLoss = (float)(control * friction * delta);
-
-		//Clamp newspeed to avoid slowing down into the opposite direction.
-		if (speedLoss > speed) 
-			speedLoss = speed;
-
-		//Lower velocity by the ratio of new speed to current speed
-		if (speed != 0)
-			Velocity *= (speed - speedLoss) / speed;
-	}
-
-	private void Accelerate(Vector3 targetDir, double targetSpeed, double accel, double delta) {
-		// Accelerate towards the desired direction.
-		// Get how much of our velocity is towards were we want to go.
-		double currentspeed = Velocity.Dot(targetDir);
-		// Get how much speed we have left to gain.
-		double addspeed = targetSpeed - currentspeed;
-		// Get how much speed should be added per second
-		double accelspeed = accel * delta * targetSpeed;
-		// Don't add enough speed to overpass the max speed
-		if (accelspeed > addspeed)
-			accelspeed = addspeed;
-
-		// Subtract amount of speed we intend to gain
-		if (GodotMath.XZ(Velocity).Length() > targetSpeed)
-			Velocity -= (float)accelspeed * GodotMath.XZ(Velocity).Normalized();
-		
-		// Add velocity
-		Velocity += (float)accelspeed*targetDir;
-	}
-
 	public void AddForce(Vector3 force) {//impulse
 		AddForce(force, 1);
 	}
@@ -190,5 +142,8 @@ public partial class Player : CharacterBody3D
 		}
 		//Stop the jump buffer here
 		jump.Cancel();
+	}
+	public void Kick() {
+		Velocity += (float)jumpForce * -Camera.GlobalBasis.Z;
 	}
 }

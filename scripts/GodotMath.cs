@@ -38,44 +38,4 @@ public class GodotMath {
 		vector.Z = Mathf.Abs(vector.Z) < epsilon ? 0 : vector.Z;
 		return vector;
 	}
-
-    //The following is a collection of functions to smooth lerp towards a value, without being affected by frame rate.
-    //This is based on Freya Holmier's blog post
-
-    //Spherical lerp
-    public static Quaternion SlerpSmooth(Quaternion from, Quaternion to, float deltatime, float halflife) {
-        from = from.Normalized();
-        to = to.Normalized();
-        return to.Slerp(from, Mathf.Pow(2, -deltatime/halflife));
-    }
-    public static Vector3 SlerpSmooth(Vector3 from, Vector3 to, float deltatime, float halflife) {
-        from = from.Normalized();
-        to = to.Normalized();
-        return to.Slerp(from, Mathf.Pow(2, -deltatime/halflife));
-    }
-    public static Basis SlerpSmooth(Basis from, Basis to, float deltatime, float halflife) {
-        return to.Slerp(from, Mathf.Pow(2f, -deltatime/halflife)); //Causes head jerks
-    }
-
-    //Lerp
-    public static Vector3 LerpSmooth(Vector3 from, Vector3 to, float deltatime, float halflife, bool radial) {
-        return new Vector3(LerpSmooth(from.X, to.X, deltatime, halflife, radial), LerpSmooth(from.Y, to.Y, deltatime, halflife, radial), LerpSmooth(from.Z, to.Z, deltatime, halflife, radial));
-    }
-    public static Vector2 LerpSmooth(Vector2 from, Vector2 to, float deltatime, float halflife, bool radial) {
-        return new Vector2(LerpSmooth(from.X, to.X, deltatime, halflife, radial), LerpSmooth(from.Y, to.Y, deltatime, halflife, radial));
-    }
-    public static Vector3 LerpSmooth(Vector3 from, Vector3 to, float deltatime, float halflife) {
-        return new Vector3(LerpSmooth(from.X, to.X, deltatime, halflife), LerpSmooth(from.Y, to.Y, deltatime, halflife), LerpSmooth(from.Z, to.Z, deltatime, halflife));
-    }
-    public static Vector2 LerpSmooth(Vector2 from, Vector2 to, float deltatime, float halflife) {
-        return new Vector2(LerpSmooth(from.X, to.X, deltatime, halflife), LerpSmooth(from.Y, to.Y, deltatime, halflife));
-    }
-    public static float LerpSmooth(float from, float to, float deltatime, float halflife) {
-        return LerpSmooth(from, to, deltatime, halflife, false);
-    }
-    public static float LerpSmooth(float from, float to, float deltatime, float halflife, bool radial) {
-        if (radial)
-            to = Mathf.LerpAngle(from, to, 1);//fix over tau interp breaking
-        return to+(from-to)*Mathf.Pow(2f, -deltatime/halflife);
-    }
 }
