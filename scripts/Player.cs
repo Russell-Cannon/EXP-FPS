@@ -16,6 +16,7 @@ public partial class Player : CharacterBody3D
 	public const float AirControlMultiplier = 0.3f;
 	public const float MaxSpeed = 7;
 	public const float Acceleration = 1;
+	public const float SlideFriction = 0.05f;
 	public const float MaxAcceleration = 1;
 	public const float WallRunMinimumSpeed = 3;
 	public const float Mass = 70;
@@ -23,8 +24,10 @@ public partial class Player : CharacterBody3D
 	public const float JumpForce = 7f;
 	public const float RoofRebound = 0.02f;
 	public const float KickForce = 10f;
+	public const float SlideForce = 5f;
 	Buffer jump = new(0.125f);
 	Gated kickCoolDown = new(1f);
+	Gated slideCoolDown = new(1f);
 
 	//Godot calls
 	public override void _Ready() {
@@ -37,6 +40,12 @@ public partial class Player : CharacterBody3D
 
 		if (Input.IsActionJustPressed("move_kick"))
 			AttemptKick();
+
+		if (Input.IsActionJustPressed("move_slide"))
+			AttemptSlide();
+
+		if (Input.IsActionJustReleased("move_slide"))
+			StateMachine.Set(PlayerStateMachine.State.Airborne, true);
 
 		if (Input.IsActionJustPressed("console"))
 			Velocity += 20f * -Camera.GlobalBasis.Z;
@@ -90,6 +99,8 @@ public partial class Player : CharacterBody3D
 			groundSurfaceNormal = Vector3.Up;
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.WallRunning) {
 			WallMove((float)delta);
+		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Sliding) {
+			SlideMove((float)delta);
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Stalling) {
 			AirStall((float)delta);
 		}
@@ -148,10 +159,10 @@ public partial class Player : CharacterBody3D
 	{
 		//Accelerate if not going as fast as possible
 		if (GetSpeed() < MaxSpeed) {
-			Accelerate(GetDesiredDirection(), Acceleration * AirControlMultiplier, delta);
+			Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
 		} else if (GetDesiredDirection().Dot(GodotMath.XZ(Velocity)) < 0) {
 			//Decelerate if trying to
-			Accelerate(GetDesiredDirection(), Acceleration * AirControlMultiplier, delta);
+			Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
 		}
 	}
 
@@ -159,7 +170,7 @@ public partial class Player : CharacterBody3D
 		if (jump.Active) { //Jump the second we hit the floor without applying friction
 			Jump();
 		} else {
-			Accelerate(GetDesiredDirection(), Acceleration, delta);
+			Accelerate(GetDesiredDirection(), delta);
 		}
 	}
 	private void WallMove(float delta) {
@@ -195,15 +206,28 @@ public partial class Player : CharacterBody3D
 		Vector3 desiredDirection = GetDesiredDirection().Project(wallTangent);
 		// Accelerate if not going as fast as possible
 		if (GetSpeed() < MaxSpeed) {
-			Accelerate(desiredDirection, Acceleration, delta);
+			Accelerate(desiredDirection, delta);
 		} else if (desiredDirection.Dot(GodotMath.XZ(Velocity)) < 0) {
 			//Decelerate if trying to
-			Accelerate(desiredDirection, Acceleration, delta);
+			Accelerate(desiredDirection, delta);
 		}
 
 		//Reduce Y-velocity
 		float Y = Lerp.LerpHalfLife(Velocity.Y, 0, delta, .1f/Acceleration);
 		Velocity = new Vector3(Velocity.X, Y, Velocity.Z);
+	}
+	public void SlideMove(float delta) {
+		if (IsOnFloor()) {
+			if (jump.Active) {
+				Jump();
+			} else {
+				//Apply friction
+				Accelerate(-Velocity.Normalized(), delta, SlideFriction, MaxAcceleration/10f);
+			}
+		} else {
+			AirMove(delta);
+		}
+
 	}
 	public void AirStall(float delta) {
 		AirMove(delta);
@@ -212,13 +236,13 @@ public partial class Player : CharacterBody3D
 		float Y = Lerp.LerpHalfLife(Velocity.Y, 0, delta, .1f/Acceleration);
 		Velocity = new Vector3(Velocity.X, Y, Velocity.Z);
 	}
-	public void Accelerate(Vector3 direction, float acceleration, float delta)
+	public void Accelerate(Vector3 direction, float delta, float acceleration = Acceleration, float maxAcceleration = MaxAcceleration)
 	{
 		// Calculate new velocity after lerping
 		Vector3 flatVelocity = Lerp.LerpHalfLife(GodotMath.XZ(Velocity), direction * MaxSpeed, delta, .1f/acceleration);
 		// Reduce change if over acceleration limit
-		if ((GodotMath.XZ(Velocity) - flatVelocity).Length() > MaxAcceleration)
-			flatVelocity = Lerp.MoveTowards(GodotMath.XZ(Velocity), direction * MaxSpeed, MaxAcceleration);
+		if ((GodotMath.XZ(Velocity) - flatVelocity).Length() > maxAcceleration)
+			flatVelocity = Lerp.MoveTowards(GodotMath.XZ(Velocity), direction * MaxSpeed, maxAcceleration);
 		// Apply change
 		Velocity = new Vector3(flatVelocity.X, Velocity.Y, flatVelocity.Z); //preserve Y velocity
 	}
@@ -279,5 +303,16 @@ public partial class Player : CharacterBody3D
 			Velocity += KickForce * knockBack;
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 		}
+	}
+	public void AttemptSlide() {
+		if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
+			Slide();
+		}
+		StateMachine.Set(PlayerStateMachine.State.Sliding);
+	}
+	public void Slide() {
+		if (slideCoolDown.Use()) 
+			Velocity += GodotMath.XZ(-Camera.GlobalBasis.Z) * SlideForce;
+		GlobalPosition -= new Vector3(0, 1, 0);
 	}
 }

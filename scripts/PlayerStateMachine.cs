@@ -29,6 +29,7 @@ public partial class PlayerStateMachine
             // Restrict some transitions
             if (state == State.WallRunning && CurrentState != State.Airborne) return; // Do not begin wall running if not airborne
             if (state == State.Walking && CurrentState == State.KickWindUp) return; // Do not walk if winding up
+            if (CurrentState == State.Sliding) return; // Do not do anything else if sliding
         }
 
         // Allow the state to transition
