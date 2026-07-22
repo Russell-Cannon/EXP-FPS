@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://b483d8vnqbix0" path="res://scripts/Player.cs" id="1_4flbx"]
 
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
+
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_4flbx"]
 
 [sub_resource type="Sky" id="Sky_4flbx"]
@@ -12,20 +14,23 @@ background_mode = 2
 sky = SubResource("Sky_4flbx")
 ambient_light_color = Color(1, 1, 1, 1)
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
-
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_4flbx"]
 
-[node name="player" type="CharacterBody3D" unique_id=152232293 node_paths=PackedStringArray("Camera", "Shape", "WallReader")]
+[node name="player" type="CharacterBody3D" unique_id=152232293 node_paths=PackedStringArray("Camera", "Collider", "KickRayCast", "WallReader")]
 script = ExtResource("1_4flbx")
 Camera = NodePath("camera")
-Shape = NodePath("shape")
+Collider = NodePath("shape")
+Shape = SubResource("CapsuleShape3D_sh265")
+KickRayCast = NodePath("camera/KickRayCast")
 WallReader = NodePath("WallReader")
 
 [node name="camera" type="Camera3D" parent="." unique_id=658672035]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 environment = SubResource("Environment_onrkg")
 fov = 90.0
+
+[node name="KickRayCast" type="RayCast3D" parent="camera" unique_id=1405611724]
+target_position = Vector3(0, 0, -2.5)
 
 [node name="shape" type="CollisionShape3D" parent="." unique_id=706636824]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

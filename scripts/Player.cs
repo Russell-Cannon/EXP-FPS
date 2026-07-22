@@ -1,11 +1,13 @@
+using System;
 using Godot;
 using GodotSteam;
 
 public partial class Player : CharacterBody3D
 {
-	[Export] double gravity = 20, jumpForce = 7, roofRebound = 1f, friction = 6, slideForce = 12;
 	[Export] Camera3D Camera;
-	[Export] CollisionShape3D Shape;
+	[Export] CollisionShape3D Collider;
+	[Export] CapsuleShape3D Shape;
+	[Export] RayCast3D KickRayCast;
 	[Export] RayCast3D WallReader;
 	public Vector2 MoveInput;
 	public PlayerStateMachine StateMachine = new();
@@ -17,7 +19,12 @@ public partial class Player : CharacterBody3D
 	public const float MaxAcceleration = 1;
 	public const float WallRunMinimumSpeed = 3;
 	public const float Mass = 70;
+	public const float Gravity = 20;
+	public const float JumpForce = 7f;
+	public const float RoofRebound = 0.02f;
+	public const float KickForce = 10f;
 	Buffer jump = new(0.125f);
+	Gated kickCoolDown = new(1f);
 
 	//Godot calls
 	public override void _Ready() {
@@ -27,6 +34,12 @@ public partial class Player : CharacterBody3D
     public override void _Input(InputEvent @event) {
 		if (Input.IsActionJustPressed("move_jump"))
 			jump.Set();
+
+		if (Input.IsActionJustPressed("move_kick"))
+			AttemptKick();
+
+		if (Input.IsActionJustPressed("console"))
+			Velocity += 20f * -Camera.GlobalBasis.Z;
 
 		if (Input.IsActionPressed("move_right")) {
 			MoveInput.X = 1;
@@ -46,9 +59,6 @@ public partial class Player : CharacterBody3D
 
 		MoveInput = MoveInput.Normalized();
 
-		if (Input.IsActionJustPressed("move_kick"))
-			Kick();
-
 		if (@event is InputEventMouseMotion motion) {
 			Vector2 distance = new(-Mathf.DegToRad((float)(motion.Relative.X * 0.125f)), Mathf.DegToRad((float)(motion.Relative.Y * 0.125f)));
 			RotateY(distance.X);
@@ -57,7 +67,22 @@ public partial class Player : CharacterBody3D
 		}
 	}
 	public override void _PhysicsProcess(double delta) {
-		// Set Move		
+		// Update States
+		StateMachine.Tick((float)delta);
+		if (StateMachine.CurrentState == PlayerStateMachine.State.Kicking) {
+			Kick();
+		}
+
+		// Update collider
+		if (StateMachine.CurrentState == PlayerStateMachine.State.Sliding || StateMachine.CurrentState == PlayerStateMachine.State.Stalling || StateMachine.CurrentState == PlayerStateMachine.State.Kicking || StateMachine.CurrentState == PlayerStateMachine.State.KickWindUp) {
+			Shape.Height = 1;
+			Collider.Position = new Vector3(0, 1.5f, 0);
+		} else {
+			Shape.Height = 2;
+			Collider.Position = new Vector3(0, 1.0f, 0);
+		}
+
+		// Move
 		if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
 			GroundMove((float)delta);
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne) {
@@ -65,18 +90,26 @@ public partial class Player : CharacterBody3D
 			groundSurfaceNormal = Vector3.Up;
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.WallRunning) {
 			WallMove((float)delta);
+		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Stalling) {
+			AirStall((float)delta);
 		}
 
-		if (StateMachine.CurrentState != PlayerStateMachine.State.WallRunning)
-			Velocity += Vector3.Down * (float)(gravity * delta); //v = a*t //Apply gravity
+		//Apply gravity
+		if (StateMachine.CurrentState != PlayerStateMachine.State.WallRunning && StateMachine.CurrentState != PlayerStateMachine.State.Stalling)
+			Velocity += Vector3.Down * (float)(Gravity * delta); //v = a*t 
 
 		MoveAndSlide();
 
 		KinematicCollision3D col = GetLastSlideCollision();
 		if (col != null) {
 			Collide(col);
+		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
+			//If we are not colliding with anything and we think we are walking
+			StateMachine.Set(PlayerStateMachine.State.Airborne);
 		}
 		GD.Print(StateMachine.CurrentState + ": " + GetSpeed());
+		if (KickRayCast.IsColliding())
+			DebugLine.I.DrawLine(KickRayCast.GetCollisionPoint(), KickRayCast.GetCollisionPoint() + KickRayCast.GetCollisionNormal()/10);
 	}
 
 //physics
@@ -90,7 +123,7 @@ public partial class Player : CharacterBody3D
 
 		if (Vector3.Up.Dot(normal) < -0.5f) {
 			//If the normal is facing downwards: bound off the surface.
-			AddForce(normal * (float)roofRebound * Vector3.Down.Dot(normal));
+			Velocity += normal * RoofRebound * Vector3.Down.Dot(normal);
 		} else if (Vector3.Up.Dot(normal) > 0.5f) {
 			//If the normal is facing upwards, cancel the affects of gravity
 			groundSurfaceNormal = normal;
@@ -172,6 +205,13 @@ public partial class Player : CharacterBody3D
 		float Y = Lerp.LerpHalfLife(Velocity.Y, 0, delta, .1f/Acceleration);
 		Velocity = new Vector3(Velocity.X, Y, Velocity.Z);
 	}
+	public void AirStall(float delta) {
+		AirMove(delta);
+		
+		//Reduce Y-velocity
+		float Y = Lerp.LerpHalfLife(Velocity.Y, 0, delta, .1f/Acceleration);
+		Velocity = new Vector3(Velocity.X, Y, Velocity.Z);
+	}
 	public void Accelerate(Vector3 direction, float acceleration, float delta)
 	{
 		// Calculate new velocity after lerping
@@ -182,15 +222,21 @@ public partial class Player : CharacterBody3D
 		// Apply change
 		Velocity = new Vector3(flatVelocity.X, Velocity.Y, flatVelocity.Z); //preserve Y velocity
 	}
-	public void AddForce(Vector3 force) {//impulse
-		AddForce(force, 1);
-	}
-	public void AddForce(Vector3 force, double delta) {//real force
-		/*	v(t) = |f(t)/m dt
-			v(t) = F*t/m + C	*/
-		Velocity += force*(float)delta/Mass;
-	}
-	
+	public void RedirectMomentum() {
+		// Don't redirect if the player doesn't want to
+		if (MoveInput == Vector2.Zero) return;
+
+		// Don't redirect if almost stopped
+		float speed = GodotMath.XZ(Velocity).Length();
+		if (speed < 0.125f) return;
+		
+		// Reduce speed by penalty for changing direction
+		float difference = GodotMath.XZ(Velocity).Normalized().Dot(GetDesiredDirection()) - 1f;
+		float penalty = Mathf.Cos(difference * Mathf.Pi / 4f);
+
+		// Redirect speed
+		Velocity = new Vector3(GetDesiredDirection().X * speed * penalty, Velocity.Y, GetDesiredDirection().Z * speed * penalty);
+	}	
 //input
 	public void Jump() {
 		// If already going down : cancel velocity
@@ -199,9 +245,9 @@ public partial class Player : CharacterBody3D
 		
 		// Add jump force
 		if (StateMachine.CurrentState == PlayerStateMachine.State.WallRunning) {
-			Velocity += (float)jumpForce * (Vector3.Up + wallSurfaceNormal - GodotMath.XZ(Camera.GlobalBasis.Z)).Normalized();
+			Velocity += JumpForce * (Vector3.Up + wallSurfaceNormal - GodotMath.XZ(Camera.GlobalBasis.Z)).Normalized();
 		} else {
-			Velocity += (float)jumpForce * Vector3.Up;
+			Velocity += JumpForce * Vector3.Up;
 		}
 		
 		// Quit being grounded
@@ -210,7 +256,28 @@ public partial class Player : CharacterBody3D
 		//Stop the jump buffer here
 		jump.Cancel();
 	}
+	public void AttemptKick() {
+		if (kickCoolDown.Ready) {
+			// If close enough to hit: attempt to hit
+			if (KickRayCast.IsColliding()) {
+				StateMachine.Set(PlayerStateMachine.State.KickWindUp);
+				kickCoolDown.Use();
+			} else if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne) {
+				StateMachine.Set(PlayerStateMachine.State.Stalling);
+				RedirectMomentum();
+				kickCoolDown.Use();
+			}
+		}
+	}
 	public void Kick() {
-		Velocity += (float)jumpForce * -Camera.GlobalBasis.Z;
+		// If hit: kick back
+		if (KickRayCast.IsColliding()) {
+			if (KickRayCast.GetCollider() is RigidBody3D rb)
+				rb.ApplyCentralForce(Mass * KickForce * Velocity.Project(KickRayCast.GetCollisionNormal()));
+			
+			Vector3 knockBack = (KickRayCast.GetCollisionPoint().DirectionTo(Camera.GlobalPosition) + KickRayCast.GetCollisionNormal()).Normalized();
+			Velocity += KickForce * knockBack;
+			StateMachine.Set(PlayerStateMachine.State.Airborne);
+		}
 	}
 }
