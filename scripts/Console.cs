@@ -38,6 +38,8 @@ public partial class Console : Node
 
 	public void Execute(string command)
 	{
+		// do not execute regular messages
+		if (command[0] != '/') return;
 		//Ignore starting character and case
 		switch (command.ToLower()[1..])
 		{
@@ -46,6 +48,12 @@ public partial class Console : Node
 				break;
 			case "host":
 				MatchMaker.Instance.Host();
+				break;
+			case "float 1":
+				Player.Gravity = 0f;
+				break;
+			case "float 0":
+				Player.Gravity = 20f;
 				break;
 			default:
 				GD.Print("Unknown command: " + command);

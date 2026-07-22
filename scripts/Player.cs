@@ -9,6 +9,7 @@ public partial class Player : CharacterBody3D
 	[Export] CapsuleShape3D Shape;
 	[Export] RayCast3D KickRayCast;
 	[Export] RayCast3D WallReader;
+	[Export] RayCast3D GroundReader;
 	public Vector2 MoveInput;
 	public PlayerStateMachine StateMachine = new();
 	Vector3 groundSurfaceNormal = Vector3.Up;
@@ -19,12 +20,14 @@ public partial class Player : CharacterBody3D
 	public const float SlideFriction = 0.05f;
 	public const float MaxAcceleration = 1;
 	public const float WallRunMinimumSpeed = 3;
+	public const float WallRunMaximumSpeed = 10;
 	public const float Mass = 70;
-	public const float Gravity = 20;
 	public const float JumpForce = 7f;
 	public const float RoofRebound = 0.02f;
 	public const float KickForce = 10f;
 	public const float SlideForce = 5f;
+	public const float SlopeForce = 10f;
+	public static float Gravity = 20;
 	Buffer jump = new(0.125f);
 	Gated kickCoolDown = new(1f);
 	Gated slideCoolDown = new(1f);
@@ -46,6 +49,10 @@ public partial class Player : CharacterBody3D
 
 		if (Input.IsActionJustReleased("move_slide"))
 			StateMachine.Set(PlayerStateMachine.State.Airborne, true);
+		if (Input.IsActionJustReleased("move_slide")) {
+			if (GroundReader.IsColliding())
+				GlobalPosition += Vector3.Up;
+		}
 
 		if (Input.IsActionJustPressed("console"))
 			Velocity += 20f * -Camera.GlobalBasis.Z;
@@ -84,19 +91,17 @@ public partial class Player : CharacterBody3D
 
 		// Update collider
 		if (StateMachine.CurrentState == PlayerStateMachine.State.Sliding || StateMachine.CurrentState == PlayerStateMachine.State.Stalling || StateMachine.CurrentState == PlayerStateMachine.State.Kicking || StateMachine.CurrentState == PlayerStateMachine.State.KickWindUp) {
-			Shape.Height = 1;
-			Collider.Position = new Vector3(0, 1.5f, 0);
+			Crouch();
 		} else {
-			Shape.Height = 2;
-			Collider.Position = new Vector3(0, 1.0f, 0);
+			Stand();
 		}
 
 		// Move
 		if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
 			GroundMove((float)delta);
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne) {
-			AirMove((float)delta);
 			groundSurfaceNormal = Vector3.Up;
+			AirMove((float)delta);
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.WallRunning) {
 			WallMove((float)delta);
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Sliding) {
@@ -109,18 +114,24 @@ public partial class Player : CharacterBody3D
 		if (StateMachine.CurrentState != PlayerStateMachine.State.WallRunning && StateMachine.CurrentState != PlayerStateMachine.State.Stalling)
 			Velocity += Vector3.Down * (float)(Gravity * delta); //v = a*t 
 
+		//Apply velocities
 		MoveAndSlide();
 
+		//Collide
 		KinematicCollision3D col = GetLastSlideCollision();
 		if (col != null) {
 			Collide(col);
+		}
+
+		//Update grounded state
+		if (GroundReader.IsColliding() && Vector3.Up.Dot(GroundReader.GetCollisionNormal()) > 0.5f) {
+			groundSurfaceNormal = GroundReader.GetCollisionNormal();
+			StateMachine.Set(PlayerStateMachine.State.Walking);
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
 			//If we are not colliding with anything and we think we are walking
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 		}
 		GD.Print(StateMachine.CurrentState + ": " + GetSpeed());
-		if (KickRayCast.IsColliding())
-			DebugLine.I.DrawLine(KickRayCast.GetCollisionPoint(), KickRayCast.GetCollisionPoint() + KickRayCast.GetCollisionNormal()/10);
 	}
 
 //physics
@@ -136,11 +147,10 @@ public partial class Player : CharacterBody3D
 			//If the normal is facing downwards: bound off the surface.
 			Velocity += normal * RoofRebound * Vector3.Down.Dot(normal);
 		} else if (Vector3.Up.Dot(normal) > 0.5f) {
-			//If the normal is facing upwards, cancel the affects of gravity
 			groundSurfaceNormal = normal;
 			StateMachine.Set(PlayerStateMachine.State.Walking);
 		} else {
-			//If the normal is mostly flat, begin wall running.
+			//If the normal is mostly horizontal, begin wall running.
 			wallSurfaceNormal = normal;
 			if (GetSpeed() > WallRunMinimumSpeed)
 				StateMachine.Set(PlayerStateMachine.State.WallRunning);
@@ -153,7 +163,7 @@ public partial class Player : CharacterBody3D
 	}
 	private float GetSpeed()
 	{
-		return GodotMath.XZ(Velocity).Length();
+		return GodotMath.XZ(Velocity, groundSurfaceNormal).Length();
 	}
 	private void AirMove(float delta)
 	{
@@ -170,7 +180,8 @@ public partial class Player : CharacterBody3D
 		if (jump.Active) { //Jump the second we hit the floor without applying friction
 			Jump();
 		} else {
-			Accelerate(GetDesiredDirection(), delta);
+			DebugLine.I.DrawLine(Camera.GlobalPosition + new Vector3(1, -0.5f, 1), Camera.GlobalPosition + new Vector3(1, -0.5f, 1) + GodotMath.AlignUpToNormal(groundSurfaceNormal, Vector3.Right));
+			Accelerate(GodotMath.AlignUpToNormal(groundSurfaceNormal, GetDesiredDirection()), delta);
 		}
 	}
 	private void WallMove(float delta) {
@@ -203,13 +214,13 @@ public partial class Player : CharacterBody3D
 
 		//Accelerate along the wall
 		Vector3 wallTangent = GodotMath.XZ(wallSurfaceNormal).Cross(Vector3.Up);
-		Vector3 desiredDirection = GetDesiredDirection().Project(wallTangent);
+		Vector3 desiredDirection = GetDesiredDirection().Project(wallTangent).Normalized();
 		// Accelerate if not going as fast as possible
-		if (GetSpeed() < MaxSpeed) {
-			Accelerate(desiredDirection, delta);
+		if (GetSpeed() < WallRunMaximumSpeed) {
+			Accelerate(desiredDirection, delta, maxSpeed: WallRunMaximumSpeed);
 		} else if (desiredDirection.Dot(GodotMath.XZ(Velocity)) < 0) {
 			//Decelerate if trying to
-			Accelerate(desiredDirection, delta);
+			Accelerate(desiredDirection, delta, maxSpeed: WallRunMaximumSpeed);
 		}
 
 		//Reduce Y-velocity
@@ -217,10 +228,14 @@ public partial class Player : CharacterBody3D
 		Velocity = new Vector3(Velocity.X, Y, Velocity.Z);
 	}
 	public void SlideMove(float delta) {
-		if (IsOnFloor()) {
+		if (GroundReader.IsColliding()) {
 			if (jump.Active) {
+				groundSurfaceNormal = Vector3.Up;
 				Jump();
 			} else {
+				//Slide the player down the slope
+				if (groundSurfaceNormal != Vector3.Up)
+					Velocity += SlopeForce * (groundSurfaceNormal - Vector3.Up).Normalized() * delta;
 				//Apply friction
 				Accelerate(-Velocity.Normalized(), delta, SlideFriction, MaxAcceleration/10f);
 			}
@@ -236,15 +251,15 @@ public partial class Player : CharacterBody3D
 		float Y = Lerp.LerpHalfLife(Velocity.Y, 0, delta, .1f/Acceleration);
 		Velocity = new Vector3(Velocity.X, Y, Velocity.Z);
 	}
-	public void Accelerate(Vector3 direction, float delta, float acceleration = Acceleration, float maxAcceleration = MaxAcceleration)
+	public void Accelerate(Vector3 direction, float delta, float acceleration = Acceleration, float maxAcceleration = MaxAcceleration, float maxSpeed = MaxSpeed)
 	{
 		// Calculate new velocity after lerping
-		Vector3 flatVelocity = Lerp.LerpHalfLife(GodotMath.XZ(Velocity), direction * MaxSpeed, delta, .1f/acceleration);
+		Vector3 flatVelocity = Lerp.LerpHalfLife(GodotMath.XZ(Velocity, groundSurfaceNormal), direction * maxSpeed, delta, .1f/acceleration);
 		// Reduce change if over acceleration limit
-		if ((GodotMath.XZ(Velocity) - flatVelocity).Length() > maxAcceleration)
-			flatVelocity = Lerp.MoveTowards(GodotMath.XZ(Velocity), direction * MaxSpeed, maxAcceleration);
+		if ((GodotMath.XZ(Velocity, groundSurfaceNormal) - flatVelocity).Length() > maxAcceleration)
+			flatVelocity = Lerp.MoveTowards(GodotMath.XZ(Velocity, groundSurfaceNormal), direction * maxSpeed, maxAcceleration);
 		// Apply change
-		Velocity = new Vector3(flatVelocity.X, Velocity.Y, flatVelocity.Z); //preserve Y velocity
+		Velocity = flatVelocity + Velocity.Project(groundSurfaceNormal); //preserve Y velocity
 	}
 	public void RedirectMomentum() {
 		// Don't redirect if the player doesn't want to
@@ -314,5 +329,16 @@ public partial class Player : CharacterBody3D
 		if (slideCoolDown.Use()) 
 			Velocity += GodotMath.XZ(-Camera.GlobalBasis.Z) * SlideForce;
 		GlobalPosition -= new Vector3(0, 1, 0);
+	}
+	// State
+	public void Crouch() {
+		Shape.Height = 1;
+		Collider.Position = new Vector3(0, 1.5f, 0);
+		GroundReader.Position = new Vector3(0, 1.0f, 0);
+	}
+	public void Stand() {
+		Shape.Height = 2;
+		Collider.Position = new Vector3(0, 1.0f, 0);
+		GroundReader.Position = Vector3.Zero;
 	}
 }

@@ -2,12 +2,13 @@ using Godot;
 
 public class GodotMath {
     public const float PI = 3.1415926536f, HALF_PI = 1.5707963268f, PI_64 = 0.0490873852f, PI_256 = 0.0122718463f;
-	public static Basis AlignUpToNormal(Vector3 normal, Vector3 vector) {
+	public static Vector3 AlignUpToNormal(Vector3 normal, Vector3 vector) {
+		if (vector == Vector3.Zero) return Vector3.Zero;
 		Basis b = new();
 		b.Z = vector;
 		b.Y = normal;
 		b = b.Orthonormalized();
-		return b;
+		return b.Z;
 	}
     public static Basis AlignYToVector(Vector3 vector) {
 		Basis b = new();
@@ -16,6 +17,11 @@ public class GodotMath {
         b.Z = b.X.Cross(b.Y);
 		b = b.Orthonormalized();
 		return b;
+    }
+    public static Vector3 XZ(Vector3 Vector, Vector3 Y)
+    {
+		Vector3 amountInY = Vector.Project(Y);
+		return Vector - amountInY;
     }
     public static Vector3 XZ(Vector3 Vector)
     {
