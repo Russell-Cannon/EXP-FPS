@@ -24,9 +24,9 @@ public partial class Profile : Node
 		}
 
 		ID = Steam.GetSteamID();
-		Name = Steam.GetFriendPersonaName(ID);
+		Name = Steam.GetPersonaName();
 
-		GD.Print($"Successfully initiazlized Steam. {Name} ({ID})");
+		GD.Print($"Successfully initialized Steam. {Name} ({ID})");
 	}
 
 }

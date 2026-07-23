@@ -67,6 +67,11 @@ public partial class Network : Node
 
 	private void read(Dictionary dictionary, ulong author)
 	{
-		if (dictionary.ContainsKey("message")) GD.Print(author + ": " + dictionary["message"]);
+		if (dictionary.ContainsKey("message"))
+		{
+			// Do not post handshakes
+			if (dictionary["message"].ToString() == "handshake") return;
+			Console.Instance.Post(Steam.GetFriendPersonaName(author) + ": " + dictionary["message"]);
+		}
 	}
 }

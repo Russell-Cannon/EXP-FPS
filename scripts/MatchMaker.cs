@@ -17,7 +17,7 @@ public partial class MatchMaker : Node
         Steam.LobbyCreated += (long connectCode, ulong lobbyID) => {
             //Quit if connection fails
             if (connectCode != 1) return;
-            GD.Print("Created Match");
+            Console.Instance.Post("Created Match");
 
             // Set this lobby as joinable
             Steam.SetLobbyJoinable(lobbyID, true);
@@ -31,7 +31,7 @@ public partial class MatchMaker : Node
         Steam.LobbyJoined += (ulong lobby, long permissions, bool locked, long response) => {
             // Create a new lobby manager for this ID
             AddChild(Lobby = new LobbyManager(lobby));
-            GD.Print("Joined Match");
+            Console.Instance.Post("Joined Match");
             Network.Instance.Handshake();
         };
 
@@ -39,17 +39,17 @@ public partial class MatchMaker : Node
     }
     public void Host()
     {
-        GD.Print("Creating match...");
+        Console.Instance.Post("Creating match...");
         Steam.CreateLobby(Steam.LobbyType.Public, MAX_PLAYERS);
     }
     public void Join(ulong lobby)
     {
-        GD.Print("Found match " + lobby);
+        Console.Instance.Post("Found match " + lobby);
 		Steam.JoinLobby(lobby);
     }
     public void FindMatch()
     {
-        GD.Print("Looking for matches...");
+        Console.Instance.Post("Looking for matches...");
         //Limit to non-full lobbies
         Steam.AddRequestLobbyListFilterSlotsAvailable(1);
 
@@ -69,6 +69,8 @@ public partial class MatchMaker : Node
         // Close the lobby
         Lobby.QueueFree();
         Lobby = null;
+
+        Console.Instance.Post("Left Match");
     }
     private void _matchListFound(Godot.Collections.Array lobbies)
     {
