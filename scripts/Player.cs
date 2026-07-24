@@ -14,21 +14,25 @@ public partial class Player : CharacterBody3D
 	public PlayerStateMachine StateMachine = new();
 	Vector3 groundSurfaceNormal = Vector3.Up;
 	Vector3 wallSurfaceNormal = Vector3.Right;
+	Vector3 lastSurfaceTouched = Vector3.Up;
 	public const float AirControlMultiplier = 0.3f;
 	public const float MaxSpeed = 7;
 	public const float Acceleration = 1;
 	public const float SlideFriction = 0.05f;
 	public const float MaxAcceleration = 1;
 	public const float WallRunMinimumSpeed = 3;
-	public const float WallRunMaximumSpeed = 10;
+	public const float WallRunMaximumSpeed = 15;
 	public const float Mass = 70;
 	public const float JumpForce = 7f;
 	public const float RoofRebound = 0.02f;
 	public const float KickForce = 10f;
 	public const float SlideForce = 5f;
 	public const float SlopeForce = 10f;
+	public const float WallDirectionInfluence = 0.4f;
 	public static float Gravity = 20;
 	Buffer jump = new(0.125f);
+	Buffer coyoteTime = new(0.125f);
+	Gated jumpCoolDown = new(0.125f);
 	Gated kickCoolDown = new(1f);
 	Gated slideCoolDown = new(1f);
 
@@ -131,7 +135,7 @@ public partial class Player : CharacterBody3D
 			//If we are not colliding with anything and we think we are walking
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 		}
-		GD.Print(StateMachine.CurrentState + ": " + GetSpeed());
+		GD.Print(coyoteTime.Active + " " + jumpCoolDown.Ready + " " + StateMachine.CurrentState + ": " + GetSpeed());
 	}
 
 //physics
@@ -167,6 +171,10 @@ public partial class Player : CharacterBody3D
 	}
 	private void AirMove(float delta)
 	{
+		// Jump if we missed our chance while grounded
+		if (coyoteTime.Active && jump.Active)
+			Jump();
+
 		//Accelerate if not going as fast as possible
 		if (GetSpeed() < MaxSpeed) {
 			Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
@@ -177,14 +185,19 @@ public partial class Player : CharacterBody3D
 	}
 
 	private void GroundMove(float delta) {
+		lastSurfaceTouched = groundSurfaceNormal;
 		if (jump.Active) { //Jump the second we hit the floor without applying friction
 			Jump();
 		} else {
-			DebugLine.I.DrawLine(Camera.GlobalPosition + new Vector3(1, -0.5f, 1), Camera.GlobalPosition + new Vector3(1, -0.5f, 1) + GodotMath.AlignUpToNormal(groundSurfaceNormal, Vector3.Right));
+			if (jumpCoolDown.Ready)
+				coyoteTime.Set();
 			Accelerate(GodotMath.AlignUpToNormal(groundSurfaceNormal, GetDesiredDirection()), delta);
 		}
 	}
 	private void WallMove(float delta) {
+		lastSurfaceTouched = wallSurfaceNormal;
+		if (jumpCoolDown.Ready)
+			coyoteTime.Set();
 		//Check if we want to leave the wall
 		// Check if we want to jump off the wall
 		if (jump.Active) {
@@ -206,7 +219,6 @@ public partial class Player : CharacterBody3D
 		//Check if we already left the wall
 		WallReader.GlobalPosition = GlobalPosition;
 		WallReader.TargetPosition = -wallSurfaceNormal;
-		GD.Print(WallReader.TargetPosition);
 		if (!WallReader.IsColliding()) {
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 			return;
@@ -215,6 +227,7 @@ public partial class Player : CharacterBody3D
 		//Accelerate along the wall
 		Vector3 wallTangent = GodotMath.XZ(wallSurfaceNormal).Cross(Vector3.Up);
 		Vector3 desiredDirection = GetDesiredDirection().Project(wallTangent).Normalized();
+		desiredDirection = desiredDirection.Lerp(-wallSurfaceNormal, WallDirectionInfluence);
 		// Accelerate if not going as fast as possible
 		if (GetSpeed() < WallRunMaximumSpeed) {
 			Accelerate(desiredDirection, delta, maxSpeed: WallRunMaximumSpeed);
@@ -229,10 +242,14 @@ public partial class Player : CharacterBody3D
 	}
 	public void SlideMove(float delta) {
 		if (GroundReader.IsColliding()) {
+			groundSurfaceNormal = Vector3.Up;
+			lastSurfaceTouched = groundSurfaceNormal;
 			if (jump.Active) {
-				groundSurfaceNormal = Vector3.Up;
 				Jump();
 			} else {
+				// Jump if we missed our chance while grounded
+				if (coyoteTime.Active && jump.Active)
+					Jump();
 				//Slide the player down the slope
 				if (groundSurfaceNormal != Vector3.Up)
 					Velocity += SlopeForce * (groundSurfaceNormal - Vector3.Up).Normalized() * delta;
@@ -278,13 +295,16 @@ public partial class Player : CharacterBody3D
 	}	
 //input
 	public void Jump() {
+		// If we jumped too recently: quit
+		if (!jumpCoolDown.Use()) return;
+
 		// If already going down : cancel velocity
 		if (Velocity.Dot(Vector3.Down) > 0)
 			Velocity += -Velocity.Project(Vector3.Down); 
 		
 		// Add jump force
-		if (StateMachine.CurrentState == PlayerStateMachine.State.WallRunning) {
-			Velocity += JumpForce * (Vector3.Up + wallSurfaceNormal - GodotMath.XZ(Camera.GlobalBasis.Z)).Normalized();
+		if (lastSurfaceTouched == wallSurfaceNormal) {
+			Velocity += JumpForce * (Vector3.Up + (lastSurfaceTouched - GodotMath.XZ(Camera.GlobalBasis.Z)).Normalized());
 		} else {
 			Velocity += JumpForce * Vector3.Up;
 		}
@@ -294,6 +314,7 @@ public partial class Player : CharacterBody3D
 		
 		//Stop the jump buffer here
 		jump.Cancel();
+		coyoteTime.Cancel();
 	}
 	public void AttemptKick() {
 		if (kickCoolDown.Ready) {

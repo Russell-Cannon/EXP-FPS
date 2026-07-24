@@ -13,20 +13,20 @@ public partial class Profile : Node
 
 		var steamInitExResult = Steam.SteamInitEx(true, 480).Status;
 		if(steamInitExResult > 0) {
-			GD.Print($"Failed to initialize Steam (code: {steamInitExResult}), shutting down...");
-			GetTree().Quit();
+			Console.Instance.Post($"Failed to initialize Steam (code: {steamInitExResult})");
+			// GetTree().Quit();
 			return;
 		}
 		if (!Steam.IsSteamRunning()) {
-			GD.Print("Steam is not running. Shutting down...");
-			GetTree().Quit();
+			Console.Instance.Post("Steam is not running");
+			// GetTree().Quit();
 			return;
 		}
 
 		ID = Steam.GetSteamID();
 		Name = Steam.GetPersonaName();
 
-		GD.Print($"Successfully initialized Steam. {Name} ({ID})");
+		Console.Instance.Post($"Successfully initialized Steam. Hello {Name} ({ID})");
 	}
 
 }

@@ -4,12 +4,12 @@
 [ext_resource type="PackedScene" uid="uid://7x0y3mkti6et" path="res://player.tscn" id="2_cgbb5"]
 [ext_resource type="Material" uid="uid://ifvsgdvidfb" path="res://art/materials/test.tres" id="2_r0myc"]
 
-[node name="platformtester" unique_id=1696669812 instance=ExtResource("1_yjqyg")]
+[node name="platformtester" unique_id=550802768 instance=ExtResource("1_yjqyg")]
 
-[node name="object" parent="." index="0" unique_id=1449044226]
+[node name="object" parent="." index="0" unique_id=1273931944]
 material_override = ExtResource("2_r0myc")
 
-[node name="object_026" parent="." index="26" unique_id=1888206641]
+[node name="object_026" parent="." index="26" unique_id=58116712]
 material_override = ExtResource("2_r0myc")
 
 [node name="player" parent="." index="29" unique_id=152232293 instance=ExtResource("2_cgbb5")]
@@ -17,3 +17,15 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." index="30" unique_id=2072705041]
 transform = Transform3D(1, 0, 0, 0, -0.50000006, 0.8660254, 0, -0.8660254, -0.50000006, 0, 5, 0)
+
+[node name="Cube " parent="." index="35" unique_id=1087808427]
+material_override = ExtResource("2_r0myc")
+
+[node name="Cube_002 " parent="." index="37" unique_id=852351264]
+material_override = ExtResource("2_r0myc")
+
+[node name="Cylinder " parent="." index="38" unique_id=1603781207]
+material_override = ExtResource("2_r0myc")
+
+[node name="Cube_003 " parent="." index="39" unique_id=1622722403]
+material_override = ExtResource("2_r0myc")
