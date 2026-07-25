@@ -35,25 +35,38 @@ public partial class Player : CharacterBody3D
 	Gated jumpCoolDown = new(0.125f);
 	Gated kickCoolDown = new(1f);
 	Gated slideCoolDown = new(1f);
+	HeldInput kickInput = new ("move_kick", 0.1f);
 
 	//Godot calls
 	public override void _Ready() {
 		Game.Instance.HideMouse();
+		AddChild(kickInput);
+		kickInput.HeldLong += () =>
+		{
+			if (kickCoolDown.Ready) {
+				StateMachine.Set(PlayerStateMachine.State.KickWindUp);
+				kickCoolDown.Use();
+			}
+		};
+		kickInput.ShortPress += () =>
+		{
+			if (kickCoolDown.Ready && !GroundReader.IsColliding()) {
+				StateMachine.Set(PlayerStateMachine.State.Stalling);
+				RedirectMomentum();
+				kickCoolDown.Use();
+			}
+		};
     }
 	
     public override void _Input(InputEvent @event) {
 		if (Input.IsActionJustPressed("move_jump"))
 			jump.Set();
 
-		if (Input.IsActionJustPressed("move_kick"))
-			AttemptKick();
-
 		if (Input.IsActionJustPressed("move_slide"))
 			AttemptSlide();
 
-		if (Input.IsActionJustReleased("move_slide"))
-			StateMachine.Set(PlayerStateMachine.State.Airborne, true);
 		if (Input.IsActionJustReleased("move_slide")) {
+			StateMachine.CurrentState = PlayerStateMachine.State.Airborne;
 			if (GroundReader.IsColliding())
 				GlobalPosition += Vector3.Up;
 		}
@@ -135,6 +148,7 @@ public partial class Player : CharacterBody3D
 			//If we are not colliding with anything and we think we are walking
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 		}
+		GD.Print(StateMachine.CurrentState + ": " + GodotMath.XZ(Velocity).Length());
 		GameWarden.Instance?.Report(GlobalPosition, Velocity, new Vector2(Rotation.Y, Camera.Rotation.X), StateMachine.CurrentState);
 	}
 
@@ -316,19 +330,6 @@ public partial class Player : CharacterBody3D
 		jump.Cancel();
 		coyoteTime.Cancel();
 	}
-	public void AttemptKick() {
-		if (kickCoolDown.Ready) {
-			// If close enough to hit: attempt to hit
-			if (KickRayCast.IsColliding()) {
-				StateMachine.Set(PlayerStateMachine.State.KickWindUp);
-				kickCoolDown.Use();
-			} else if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne) {
-				StateMachine.Set(PlayerStateMachine.State.Stalling);
-				RedirectMomentum();
-				kickCoolDown.Use();
-			}
-		}
-	}
 	public void Kick() {
 		// If hit: kick back
 		if (KickRayCast.IsColliding()) {
@@ -337,8 +338,8 @@ public partial class Player : CharacterBody3D
 			
 			Vector3 knockBack = (KickRayCast.GetCollisionPoint().DirectionTo(Camera.GlobalPosition) + KickRayCast.GetCollisionNormal()).Normalized();
 			Velocity += KickForce * knockBack;
-			StateMachine.Set(PlayerStateMachine.State.Airborne);
 		}
+		StateMachine.Set(PlayerStateMachine.State.Airborne);
 	}
 	public void AttemptSlide() {
 		if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {

@@ -24,13 +24,11 @@ public partial class PlayerStateMachine
         new() {StartState = State.Stalling, EndState = State.Airborne, Duration = 0.3f, TimeElapsed = 0f}
     };
     public State CurrentState = State.Airborne;
-    public void Set(State state, bool ignoreRestrictions = false) {
-        if (!ignoreRestrictions) {
-            // Restrict some transitions
-            if (state == State.WallRunning && CurrentState != State.Airborne) return; // Do not begin wall running if not airborne
-            if (state == State.Walking && CurrentState == State.KickWindUp) return; // Do not walk if winding up
-            if (CurrentState == State.Sliding) return; // Do not do anything else if sliding
-        }
+    public void Set(State state) {
+        // Restrict some transitions
+        if (state == State.WallRunning && CurrentState != State.Airborne) return; // Do not begin wall running if not airborne
+        if (CurrentState == State.Sliding) return; // Do not do anything else if sliding
+        if (CurrentState == State.KickWindUp && state == State.Kicking && Input.IsActionPressed("move_kick")) return; // Do not advance from wind up if still holding
 
         // Allow the state to transition
         CurrentState = state;
@@ -48,8 +46,7 @@ public partial class PlayerStateMachine
 
             //Enact any transition that is due
             if (animatedTransitions[i].Duration <= animatedTransitions[i].TimeElapsed) {
-                Set(animatedTransitions[i].EndState, true);
-                animatedTransitions[i].TimeElapsed = 0;
+                Set(animatedTransitions[i].EndState);
             }
         }
     }
