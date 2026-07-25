@@ -11,7 +11,15 @@ public class Lerp
 	public static float LerpHalfLife(float a, float b, float dt, float h) {
 		return b + (a - b)*(float)Math.Pow(2, -dt/h);
 	}
+	public static float LerpHalfLifeRadial(float a, float b, float dt, float h) {
+		b = Mathf.LerpAngle(a, b, 1);//fix over tau interpolation breaking
+		return b + (a - b)*(float)Math.Pow(2, -dt/h);
+	}
 	public static float LerpOverTime(float a, float b, float dt, float s) {
+		return b + (a - b)*(float)Math.Pow(2, -dt/(-s/Math.Log2(0.01)));
+	}
+	public static float LerpOverTimeRadial(float a, float b, float dt, float s) {
+		b = Mathf.LerpAngle(a, b, 1);//fix over tau interpolation breaking
 		return b + (a - b)*(float)Math.Pow(2, -dt/(-s/Math.Log2(0.01)));
 	}
 	public static Vector3 MoveTowards(Vector3 a, Vector3 b, float step) {

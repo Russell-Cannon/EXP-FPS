@@ -6,9 +6,14 @@
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_sugp2"]
 
-[node name="actor" type="CharacterBody3D" unique_id=635338119 node_paths=PackedStringArray("nameTag")]
+[node name="actor" type="CharacterBody3D" unique_id=635338119 node_paths=PackedStringArray("nameTag", "Collider", "CSGShape", "Neck")]
 script = ExtResource("1_x4c43")
 nameTag = NodePath("nametag")
+Collider = NodePath("shape")
+Shape = SubResource("CapsuleShape3D_0wfyh")
+Mesh = SubResource("CapsuleMesh_sugp2")
+CSGShape = NodePath("capsule")
+Neck = NodePath("neck")
 
 [node name="shape" type="CollisionShape3D" parent="." unique_id=96692755]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -22,3 +27,10 @@ mesh = SubResource("CapsuleMesh_sugp2")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
 billboard = 1
 text = "persona name"
+
+[node name="neck" type="Node3D" parent="." unique_id=1938880575]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="neck" unique_id=1370300490]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.7)
+size = Vector3(0.25, 0.25, 0.25)

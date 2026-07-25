@@ -74,6 +74,7 @@ public partial class MatchMaker : Node
     }
     private void _matchListFound(Godot.Collections.Array lobbies)
     {
+        Console.Instance.Post("Lobbies found: " + lobbies);
         if (lobbies.Count > 0) 
             Join((ulong)lobbies[0]);
     }

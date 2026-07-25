@@ -21,8 +21,10 @@ public partial class Network : Node
 
 			//Decompress packet
 			byte[] data = packet["payload"].AsByteArray();
-			Dictionary dictionary = (Dictionary) GD.BytesToVar(data.Decompress(data.LongLength, FileAccess.CompressionMode.Zstd));
-			read(dictionary, (ulong)packet["identity"]);
+			int originalSize = BitConverter.ToInt32(data, 0);
+			byte[] compressed = new byte[data.Length - 4];
+			System.Array.Copy(data, 4, compressed, 0, compressed.Length);
+			read((Dictionary) GD.BytesToVar(compressed.Decompress(originalSize, FileAccess.CompressionMode.Zstd)), (ulong)packet["identity"]);
 		}
 		
 	}
@@ -34,7 +36,7 @@ public partial class Network : Node
 
 	public void SendMessage(string message)
 	{
-		SendPacketToAll(new Dictionary() {{"message", message}}, true);
+		SendPacketToAll(new Dictionary() {{"type", "message"}, {"message", message}}, true);
 	}
 
 	public void SendPacket(ulong target, Dictionary dictionary, bool reliable)
@@ -44,9 +46,14 @@ public partial class Network : Node
 		int channel = 0;
 
 		// Create a data array to send the data through
-		byte[] data = GD.VarToBytes(dictionary).Compress(FileAccess.CompressionMode.Zstd);
+		byte[] raw = GD.VarToBytes(dictionary);
+		byte[] compressed = raw.Compress(FileAccess.CompressionMode.Zstd);
 
-		Steam.SendMessageToUser(target, data, sendType, channel);
+		byte[] output = new byte[4 + compressed.Length];
+		BitConverter.GetBytes(raw.Length).CopyTo(output, 0);
+		compressed.CopyTo(output, 4);
+
+		Steam.SendMessageToUser(target, output, sendType, channel);
 	}
 	public void SendPacketToAll(Dictionary dictionary, bool reliable) { 
 		if (MatchMaker.Instance.Lobby != null)
@@ -63,15 +70,17 @@ public partial class Network : Node
 
 	private void read(Dictionary dictionary, ulong author)
 	{
-		if (dictionary.ContainsKey("message"))
-		{
-			// Do not post handshakes
-			if (dictionary["message"].ToString() != "handshake")
-				Console.Instance.Post(Steam.GetFriendPersonaName(author) + ": " + dictionary["message"]);
-		}
-		if (dictionary.ContainsKey("type") && dictionary["type"].ToString() == "update")
-		{
-			GameWarden.Instance?.Parse(dictionary, author);
+		if (!dictionary.ContainsKey("type")) return;
+
+		switch (dictionary["type"].ToString()) {
+			case "message":
+				// Do not post handshakes
+				if (dictionary["message"].ToString() != "handshake")
+					Console.Instance.Post(Steam.GetFriendPersonaName(author) + ": " + dictionary["message"]);
+				break;
+			case "update":
+				GameWarden.Instance?.Parse(dictionary, author);
+				break;
 		}
 	}
 }

@@ -13,8 +13,12 @@ public partial class GameWarden : Node
 	{
         Map = Constants.Instance.GYM_SCENE.Instantiate<Node3D>();
         AddChild(Map);
+    }
+    public override void _EnterTree()
+    {
 		Instance = this;
     }
+
     public override void _ExitTree()
     {
         Instance = null;
@@ -57,17 +61,29 @@ public partial class GameWarden : Node
         return null;
     }
     // RPC
-    public void ReportPosition(Vector3 position)
+    public void Report(Vector3 position, Vector3 velocity, Vector2 rotation, PlayerStateMachine.State state)
     {
         Network.Instance.SendPacketToAll(new Dictionary() {
             {"type", "update"}, 
-            {"position", position}
+            {"position", position},
+            {"velocity", velocity},
+            {"rotation", rotation},
+            {"state", (int)state}
         }, false);
     }
     public void Parse(Dictionary dict, ulong author)
     {
         if (dict.ContainsKey("position")) {
-            GetActor(author).MoveActor((Vector3)dict["position"]);
+            GetActor(author)._SetPosition((Vector3)dict["position"]);
+        }
+        if (dict.ContainsKey("velocity")) {
+            GetActor(author)._SetVelocity((Vector3)dict["velocity"]);
+        }
+        if (dict.ContainsKey("rotation")) {
+            GetActor(author)._SetRotation((Vector2)dict["rotation"]);
+        }
+        if (dict.ContainsKey("state")) {
+            GetActor(author).SetState((PlayerStateMachine.State)(int)dict["state"]);
         }
     }
 }
