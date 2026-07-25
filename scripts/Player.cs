@@ -135,7 +135,7 @@ public partial class Player : CharacterBody3D
 			//If we are not colliding with anything and we think we are walking
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 		}
-		GD.Print(coyoteTime.Active + " " + jumpCoolDown.Ready + " " + StateMachine.CurrentState + ": " + GetSpeed());
+		GameWarden.Instance?.ReportPosition(GlobalPosition);
 	}
 
 //physics

@@ -7,14 +7,19 @@ public partial class LobbyManager : Node
 {
 	public List<ulong> Members {get; private set;} = new List<ulong>();
 	public ulong ID {get; private set;}
+	GameWarden warden;
 	// Called when the node enters the scene tree for the first time.
 	public override void _Ready()
 	{
+		warden = new();
+		AddChild(warden);
 		Steam.LobbyChatUpdate += LobbyChatUpdate;
 		//Get Steam IDs for each member in the lobby
 		for (int i = 0; i < Steam.GetNumLobbyMembers(ID); i++)
 		{
-			Members.Add(Steam.GetLobbyMemberByIndex(ID, i));
+			ulong memberID = Steam.GetLobbyMemberByIndex(ID, i);
+			Members.Add(memberID);
+			warden.AddPlayer(memberID, memberID == Profile.Instance.ID);
 		}
 	}
 
@@ -41,11 +46,13 @@ public partial class LobbyManager : Node
 	public void HandlePlayerJoined(ulong UID)
 	{
 		Console.Instance.Post(Steam.GetFriendPersonaName(UID) + " joined");
+		warden.AddPlayer(UID, false);
 		Members.Add(UID);
 	}
 	public void HandlePlayerLeft(ulong UID)
 	{
 		Console.Instance.Post(Steam.GetFriendPersonaName(UID) + " left");
+		warden.RemovePlayer(UID);
 		Members.Remove(UID);
 	}
 }

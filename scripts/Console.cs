@@ -70,7 +70,7 @@ public partial class Console : Control
 					}
 					break;
 				case "version":
-					Post(MatchMaker.VERSION);
+					Post(Constants.Instance.VERSION);
 					break;
 				// Cheats
 				case "float 1":
@@ -84,7 +84,7 @@ public partial class Console : Control
 					break;
 			}
 		} else {
-			Network.Instance.SendMessage(command, true);
+			Network.Instance.SendMessage(command);
 			Post(Profile.Instance.Name + ": " + command);
 		}
 		closeConsole();

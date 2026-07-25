@@ -22,7 +22,6 @@ public partial class Network : Node
 			//Decompress packet
 			byte[] data = packet["payload"].AsByteArray();
 			Dictionary dictionary = (Dictionary) GD.BytesToVar(data.Decompress(data.LongLength, FileAccess.CompressionMode.Zstd));
-
 			read(dictionary, (ulong)packet["identity"]);
 		}
 		
@@ -30,19 +29,15 @@ public partial class Network : Node
 
 	public void Handshake()
 	{
-		SendMessage("handshake", true);
+		SendMessage("handshake");
 	}
 
-	public void SendMessage(ulong target, string message, bool reliable)
+	public void SendMessage(string message)
 	{
-		sendPacket(target, new Dictionary() {{"message", message}}, reliable);
-	}
-	public void SendMessage(string message, bool reliable)
-	{
-		sendPacket(new Dictionary() {{"message", message}}, reliable);
+		SendPacketToAll(new Dictionary() {{"message", message}}, true);
 	}
 
-	private void sendPacket(ulong target, Dictionary dictionary, bool reliable)
+	public void SendPacket(ulong target, Dictionary dictionary, bool reliable)
 	{
 		// Set the sendType and channel
 		int sendType = reliable ? (int)Steam.NetworkingSendReliable : (int)Steam.NetworkingSendNoDelay;
@@ -53,14 +48,15 @@ public partial class Network : Node
 
 		Steam.SendMessageToUser(target, data, sendType, channel);
 	}
-	private void sendPacket(Dictionary dictionary, bool reliable) { 
+	public void SendPacketToAll(Dictionary dictionary, bool reliable) { 
 		if (MatchMaker.Instance.Lobby != null)
 		{
 			// Loop through all peers
 			foreach (ulong member in MatchMaker.Instance.Lobby.Members)
 			{
 				// Send package to each peer
-				sendPacket(member, dictionary, reliable);
+				if (member != Profile.Instance.ID)
+					SendPacket(member, dictionary, reliable);
 			}
 		}
 	}
@@ -70,8 +66,12 @@ public partial class Network : Node
 		if (dictionary.ContainsKey("message"))
 		{
 			// Do not post handshakes
-			if (dictionary["message"].ToString() == "handshake") return;
-			Console.Instance.Post(Steam.GetFriendPersonaName(author) + ": " + dictionary["message"]);
+			if (dictionary["message"].ToString() != "handshake")
+				Console.Instance.Post(Steam.GetFriendPersonaName(author) + ": " + dictionary["message"]);
+		}
+		if (dictionary.ContainsKey("type") && dictionary["type"].ToString() == "update")
+		{
+			GameWarden.Instance?.Parse(dictionary, author);
 		}
 	}
 }

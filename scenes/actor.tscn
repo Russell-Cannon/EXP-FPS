@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://c6jew74a78kcm"]
+
+[ext_resource type="Script" uid="uid://bxhagl4wtnj2y" path="res://scripts/Actor.cs" id="1_x4c43"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_0wfyh"]
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_sugp2"]
+
+[node name="actor" type="CharacterBody3D" unique_id=635338119 node_paths=PackedStringArray("nameTag")]
+script = ExtResource("1_x4c43")
+nameTag = NodePath("nametag")
+
+[node name="shape" type="CollisionShape3D" parent="." unique_id=96692755]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("CapsuleShape3D_0wfyh")
+
+[node name="capsule" type="CSGMesh3D" parent="." unique_id=2127487260]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("CapsuleMesh_sugp2")
+
+[node name="nametag" type="Label3D" parent="." unique_id=445101708]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.2, 0)
+billboard = 1
+text = "persona name"

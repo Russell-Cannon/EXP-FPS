@@ -1,12 +1,12 @@
 using Godot;
 using System;
 using GodotSteam;
+using System.Reflection.Metadata;
 
 public partial class MatchMaker : Node
 {
     public static MatchMaker Instance {get; private set;}
     public const int MAX_PLAYERS = 8;
-    public const string VERSION = "ExperimentalFPSPre-Alpha";
     public LobbyManager Lobby = null;
     
     public override void _Ready()
@@ -24,7 +24,7 @@ public partial class MatchMaker : Node
 
             // Set some lobby data
             Steam.SetLobbyData(lobbyID, "name", Profile.Instance.ID + ":" + lobbyID);
-            Steam.SetLobbyData(lobbyID, "version", VERSION);
+            Steam.SetLobbyData(lobbyID, "version", Constants.Instance.VERSION);
         };
 
         //On lobby joined: grab its ID
@@ -54,7 +54,7 @@ public partial class MatchMaker : Node
         Steam.AddRequestLobbyListFilterSlotsAvailable(1);
 
         //Limit to games of the same version
-        Steam.AddRequestLobbyListStringFilter("version", VERSION, Steam.LobbyComparison.LobbyComparisonEqual);
+        Steam.AddRequestLobbyListStringFilter("version", Constants.Instance.VERSION, Steam.LobbyComparison.LobbyComparisonEqual);
 
 		Steam.RequestLobbyList();
         //Continue on _matchListFound

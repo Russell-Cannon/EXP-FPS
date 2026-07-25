@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://dvumo03xeatdw"]
+
+[ext_resource type="PackedScene" uid="uid://cfv1njbrnmwxt" path="res://art/maps/platformtester.blend" id="1_swmfh"]
+[ext_resource type="Material" uid="uid://ifvsgdvidfb" path="res://art/materials/test.tres" id="2_dc2ix"]
+
+[node name="platformtester" unique_id=1605599309 instance=ExtResource("1_swmfh")]
+
+[node name="object" parent="." index="0" unique_id=597068655]
+material_override = ExtResource("2_dc2ix")
+
+[node name="object_026" parent="." index="26" unique_id=712403185]
+material_override = ExtResource("2_dc2ix")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." index="29" unique_id=2072705041]
+transform = Transform3D(1, 0, 0, 0, -0.50000006, 0.8660254, 0, -0.8660254, -0.50000006, 0, 5, 0)
+
+[node name="Cube " parent="." index="34" unique_id=661024427]
+material_override = ExtResource("2_dc2ix")
+
+[node name="Cube_002 " parent="." index="36" unique_id=1992336691]
+material_override = ExtResource("2_dc2ix")
+
+[node name="Cylinder " parent="." index="37" unique_id=2112202286]
+material_override = ExtResource("2_dc2ix")
+
+[node name="Cube_003 " parent="." index="38" unique_id=284780321]
+material_override = ExtResource("2_dc2ix")
