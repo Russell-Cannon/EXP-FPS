@@ -10,6 +10,7 @@ public partial class Player : CharacterBody3D
 	[Export] RayCast3D KickRayCast;
 	[Export] RayCast3D WallReader;
 	[Export] RayCast3D GroundReader;
+	[Export] RayCast3D StepUpReader;
 	public Vector2 MoveInput;
 	public PlayerStateMachine StateMachine = new();
 	Vector3 groundSurfaceNormal = Vector3.Up;
@@ -161,14 +162,14 @@ public partial class Player : CharacterBody3D
 		if (collision.GetCollider() is RigidBody3D rb)
 			rb.ApplyCentralForce(Mass * Velocity.Project(normal));
 
-		if (Vector3.Up.Dot(normal) < -0.5f) {
+		if (Vector3.Up.Dot(normal) < -0.5f) { //roof
 			//If the normal is facing downwards: bound off the surface.
 			Velocity += normal * RoofRebound * Vector3.Down.Dot(normal);
-		} else if (Vector3.Up.Dot(normal) > 0.5f) {
+		} else if (Vector3.Up.Dot(normal) > 0.5f) { //floor
 			groundSurfaceNormal = normal;
 			StateMachine.Set(PlayerStateMachine.State.Walking);
-		} else {
-			//If the normal is mostly horizontal, begin wall running.
+		} else { //wall
+			// Attempt to wall running
 			wallSurfaceNormal = normal;
 			if (GetSpeed() > WallRunMinimumSpeed)
 				StateMachine.Set(PlayerStateMachine.State.WallRunning);
@@ -205,6 +206,8 @@ public partial class Player : CharacterBody3D
 		} else {
 			if (jumpCoolDown.Ready)
 				coyoteTime.Set();
+
+			StepUp(delta);
 			Accelerate(GodotMath.AlignUpToNormal(groundSurfaceNormal, GetDesiredDirection()), delta);
 		}
 	}
@@ -306,7 +309,22 @@ public partial class Player : CharacterBody3D
 
 		// Redirect speed
 		Velocity = new Vector3(GetDesiredDirection().X * speed * penalty, Velocity.Y, GetDesiredDirection().Z * speed * penalty);
-	}	
+	}
+	public void StepUp(float delta)
+	{
+		//Set stepup reader's position
+		StepUpReader.GlobalPosition = GodotMath.AlignUpToNormal(groundSurfaceNormal, GetDesiredDirection())*0.7f + groundSurfaceNormal*0.5f + GlobalPosition;
+		StepUpReader.TargetPosition = -groundSurfaceNormal*0.4f;
+
+		//Check if its possible
+		if (!StepUpReader.IsColliding()) return; //if not colliding
+		if (StepUpReader.GetCollisionPoint().Y <= GlobalPosition.Y) return; //if point is lower than we are
+		if (StepUpReader.GetCollisionNormal().Dot(groundSurfaceNormal) < 0.25f) return; //if surface is too perpendicular to our current spot
+		if (GodotMath.XZ(Velocity * delta * 3, groundSurfaceNormal).Project((StepUpReader.GetCollisionPoint() - GlobalPosition).Normalized()).Length() < 0.7f - 0.5f) return; //if are not going fast enough to land on the surface after stepping up
+
+		//move body up
+		GlobalPosition = new Vector3(GlobalPosition.X, StepUpReader.GetCollisionPoint().Y, GlobalPosition.Z);
+	}
 //input
 	public void Jump() {
 		// If we jumped too recently: quit

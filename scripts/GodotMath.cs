@@ -27,7 +27,6 @@ public class GodotMath {
     {
         return new Vector3(Vector.X, 0, Vector.Z);
     }
-
 	public static bool AboutEqual(Vector3 a, Vector3 b, float epsilon) {
 		return AboutEqual(a.X, b.X, epsilon) && AboutEqual(a.Y, b.Y, epsilon) && AboutEqual(a.Z, b.Z, epsilon);
 	}
