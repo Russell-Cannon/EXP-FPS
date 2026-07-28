@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://7x0y3mkti6et"]
 
 [ext_resource type="Script" uid="uid://b483d8vnqbix0" path="res://scripts/Player.cs" id="1_4flbx"]
+[ext_resource type="Script" uid="uid://daqea0fs7v5th" path="res://scenes/CameraEffects.cs" id="2_g2els"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
 
@@ -28,10 +29,12 @@ StepUpReader = NodePath("StepUpReader")
 HeadSpaceReader = NodePath("HeadSpaceReader")
 VaultReader = NodePath("VaultReader")
 
-[node name="camera" type="Camera3D" parent="." unique_id=658672035]
+[node name="camera" type="Camera3D" parent="." unique_id=658672035 node_paths=PackedStringArray("player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
 environment = SubResource("Environment_onrkg")
 fov = 90.0
+script = ExtResource("2_g2els")
+player = NodePath("..")
 
 [node name="KickRayCast" type="RayCast3D" parent="camera" unique_id=1405611724]
 target_position = Vector3(0, 0, -2.5)

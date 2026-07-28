@@ -23,12 +23,23 @@ public partial class PlayerStateMachine
         new() {StartState = State.KickWindUp, EndState = State.Kicking, Duration = 0.4f, TimeElapsed = 0f},
         new() {StartState = State.Stalling, EndState = State.Airborne, Duration = 0.3f, TimeElapsed = 0f}
     };
+    public event Action StartWallRun;
+    public event Action StopWallRun;
+    public event Action Land;
     public State CurrentState = State.Airborne;
     public void Set(State state) {
         // Restrict some transitions
         if (state == State.WallRunning && CurrentState != State.Airborne) return; // Do not begin wall running if not airborne
         if (CurrentState == State.Sliding) return; // Do not do anything else if sliding
         if (CurrentState == State.KickWindUp && state == State.Kicking && Input.IsActionPressed("move_kick")) return; // Do not advance from wind up if still holding
+
+        // Activate animations for some transitions
+        if (CurrentState == State.Airborne && state == State.WallRunning) 
+            StartWallRun?.Invoke();
+        if (CurrentState == State.WallRunning && state != State.WallRunning) 
+            StopWallRun?.Invoke();
+        if (CurrentState == State.Airborne && state == State.Walking)
+            Land?.Invoke();
 
         // Allow the state to transition
         CurrentState = state;

@@ -43,7 +43,7 @@ public partial class HeldInput : Node
             } else {
                 //call short
                 ShortPress?.Invoke();
-                timer.Stop();
+                timer?.Stop();
             }
         }
 

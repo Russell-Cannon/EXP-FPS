@@ -4,7 +4,7 @@ using GodotSteam;
 
 public partial class Player : CharacterBody3D
 {
-	[Export] Camera3D Camera;
+	[Export] public CameraEffects Camera;
 	[Export] CollisionShape3D Collider;
 	[Export] CapsuleShape3D Shape;
 	[Export] RayCast3D KickRayCast;
@@ -18,6 +18,7 @@ public partial class Player : CharacterBody3D
 	Vector3 groundSurfaceNormal = Vector3.Up;
 	Vector3 wallSurfaceNormal = Vector3.Right;
 	Vector3 lastSurfaceTouched = Vector3.Up;
+	Vector3 lastVelocity = Vector3.Zero;
 	public const float AirControlMultiplier = 0.3f;
 	public const float MaxSpeed = 7;
 	public const float Acceleration = 1;
@@ -39,6 +40,7 @@ public partial class Player : CharacterBody3D
 	Gated kickCoolDown = new(1f);
 	Gated slideCoolDown = new(1f);
 	HeldInput kickInput = new ("move_kick", 0.1f);
+	public Duration WallRunTime = new(3f);
 
 	//Godot calls
 	public override void _Ready() {
@@ -59,6 +61,8 @@ public partial class Player : CharacterBody3D
 				kickCoolDown.Use();
 			}
 		};
+		StateMachine.StartWallRun += WallRunTime.Set;
+		StateMachine.StopWallRun += WallRunTime.Cancel;
     }
 	
     public override void _Input(InputEvent @event) {
@@ -107,6 +111,7 @@ public partial class Player : CharacterBody3D
 			if (HeadSpaceReader.IsColliding() && GroundReader.IsColliding()) {
 				//Grounded and no room to stand: give up for now
 			} else {
+				ResetState();
 				StateMachine.CurrentState = PlayerStateMachine.State.Airborne;
 				if (GroundReader.IsColliding())
 					GlobalPosition += Vector3.Up;
@@ -150,6 +155,8 @@ public partial class Player : CharacterBody3D
 		//Update grounded state
 		if (GroundReader.IsColliding() && Vector3.Up.Dot(GroundReader.GetCollisionNormal()) > 0.5f) {
 			groundSurfaceNormal = GroundReader.GetCollisionNormal();
+			if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne)
+				Camera.Land(lastVelocity.Y);
 			StateMachine.Set(PlayerStateMachine.State.Walking);
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
 			//If we are not colliding with anything and we think we are walking
@@ -157,6 +164,7 @@ public partial class Player : CharacterBody3D
 		}
 		GD.Print(StateMachine.CurrentState + ": " + GodotMath.XZ(Velocity).Length());
 		GameWarden.Instance?.Report(GlobalPosition, Velocity, new Vector2(Rotation.Y, Camera.Rotation.X), StateMachine.CurrentState);
+		lastVelocity = Velocity;
 	}
 
 //physics
@@ -173,12 +181,16 @@ public partial class Player : CharacterBody3D
 			Velocity += normal * RoofRebound * Vector3.Down.Dot(normal);
 		} else if (Vector3.Up.Dot(normal) > 0.5f) { //floor
 			groundSurfaceNormal = normal;
+			if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne)
+				Camera.Land(lastVelocity.Y);
 			StateMachine.Set(PlayerStateMachine.State.Walking);
 		} else { //wall
 			// Attempt to wall running
 			wallSurfaceNormal = normal;
-			if (GetSpeed() > WallRunMinimumSpeed)
+			if (GetSpeed() > WallRunMinimumSpeed) {
+				Camera.Lean(normal);
 				StateMachine.Set(PlayerStateMachine.State.WallRunning);
+			}
 		}
 	}
 
@@ -233,6 +245,11 @@ public partial class Player : CharacterBody3D
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 			return;
 		}
+		// Check if we are out of time
+		if (WallRunTime.Expired) {
+			StateMachine.Set(PlayerStateMachine.State.Airborne);
+			return;			
+		}
 		// Check if we are moving off the wall
 		if (GetDesiredDirection().Dot(GodotMath.XZ(wallSurfaceNormal)) > 0.5f) {
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
@@ -251,6 +268,9 @@ public partial class Player : CharacterBody3D
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 			return;
 		}
+
+		//Set animation
+		Camera.Lean(wallSurfaceNormal);
 
 		//Accelerate along the wall
 		Vector3 wallTangent = GodotMath.XZ(wallSurfaceNormal).Cross(Vector3.Up);
@@ -385,7 +405,7 @@ public partial class Player : CharacterBody3D
 			Vector3 knockBack = (KickRayCast.GetCollisionPoint().DirectionTo(Camera.GlobalPosition) + KickRayCast.GetCollisionNormal()).Normalized();
 			Velocity += KickForce * knockBack;
 		}
-		StateMachine.Set(PlayerStateMachine.State.Airborne);
+		ResetState();
 	}
 	public void AttemptSlide() {
 		if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
@@ -408,5 +428,12 @@ public partial class Player : CharacterBody3D
 		Shape.Height = 2;
 		Collider.Position = new Vector3(0, 1.0f, 0);
 		GroundReader.Position = Vector3.Zero;
+	}
+	public void ResetState()
+	{
+		if (GroundReader.IsColliding())
+			StateMachine.CurrentState = PlayerStateMachine.State.Walking;
+		else 
+			StateMachine.CurrentState = PlayerStateMachine.State.Airborne;
 	}
 }
