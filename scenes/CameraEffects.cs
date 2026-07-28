@@ -6,6 +6,7 @@ public partial class CameraEffects : Camera3D
     [Export] public Player player;
     //Accessibility settings
     public static float RotationStrength = 1f;
+    public static float TranslationStrength = 1f;
     //Tracked values
     Vector3 BasePosition;
     Vector3 LeanDirection = Vector3.Up;
@@ -32,8 +33,8 @@ public partial class CameraEffects : Camera3D
         Position = Lerp.LerpHalfLife(Position, BasePosition, (float)delta, .1f/Friction);
 
         //Clip position
-        if (Position.DistanceTo(BasePosition) > 0.5f)
-            Position = BasePosition.DirectionTo(Position).Normalized() * 0.5f + BasePosition;
+        if (Position.DistanceTo(BasePosition) > 0.5f * TranslationStrength)
+            Position = BasePosition.DirectionTo(Position).Normalized() * 0.5f * TranslationStrength + BasePosition;
     }
     public void Land(float force)
     {
@@ -44,7 +45,10 @@ public partial class CameraEffects : Camera3D
     {
         LeanDirection = -WallNormal;
     }
-    public void Vault(Vector3 Point) {}
+    public void Vault(Vector3 Point)
+    {
+        GlobalPosition = player.GlobalPosition + BasePosition - player.GlobalPosition.DirectionTo(Point) * player.GlobalPosition.DistanceTo(Point);
+    }
     public void AddForce(Vector3 Force)
     {
         Velocity += Force/3f;

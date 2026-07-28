@@ -371,6 +371,7 @@ public partial class Player : CharacterBody3D
 		if (VaultReader.GetCollisionNormal().Dot(Vector3.Up) < 0.7f) return; //trying to vault to a wall
 
 		jump.Cancel();
+		Camera.Vault(VaultReader.GetCollisionPoint());
 		GlobalPosition = VaultReader.GetCollisionPoint();
 	}
 //input
