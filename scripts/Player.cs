@@ -12,6 +12,7 @@ public partial class Player : CharacterBody3D
 	[Export] RayCast3D GroundReader;
 	[Export] RayCast3D StepUpReader;
 	[Export] RayCast3D HeadSpaceReader;
+	[Export] RayCast3D VaultReader;
 	public Vector2 MoveInput;
 	public PlayerStateMachine StateMachine = new();
 	Vector3 groundSurfaceNormal = Vector3.Up;
@@ -195,6 +196,11 @@ public partial class Player : CharacterBody3D
 		if (coyoteTime.Active && jump.Active)
 			Jump();
 
+		// Vault if we are trying to jump mid air
+		if (!coyoteTime.Active && jump.Active)
+			Vault();
+
+		StepUp(delta);
 		//Accelerate if not going as fast as possible
 		if (GetSpeed() < MaxSpeed) {
 			Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
@@ -269,9 +275,6 @@ public partial class Player : CharacterBody3D
 			if (jump.Active) {
 				Jump();
 			} else {
-				// Jump if we missed our chance while grounded
-				if (coyoteTime.Active && jump.Active)
-					Jump();
 				//Slide the player down the slope
 				if (groundSurfaceNormal != Vector3.Up)
 					Velocity += SlopeForce * (groundSurfaceNormal - Vector3.Up).Normalized() * delta;
@@ -280,7 +283,18 @@ public partial class Player : CharacterBody3D
 			}
 		} else {
 			groundSurfaceNormal = Vector3.Up;
-			AirMove(delta);
+
+			// Jump if we missed our chance while grounded
+			if (coyoteTime.Active && jump.Active)
+				Jump();
+
+			//Accelerate if not going as fast as possible
+			if (GetSpeed() < MaxSpeed) {
+				Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
+			} else if (GetDesiredDirection().Dot(GodotMath.XZ(Velocity)) < 0) {
+				//Decelerate if trying to
+				Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
+			}
 		}
 
 	}
@@ -330,6 +344,14 @@ public partial class Player : CharacterBody3D
 
 		//move body up
 		GlobalPosition = new Vector3(GlobalPosition.X, StepUpReader.GetCollisionPoint().Y, GlobalPosition.Z);
+	}
+	public void Vault()
+	{
+		if (!VaultReader.IsColliding()) return;
+		if (VaultReader.GetCollisionNormal().Dot(Vector3.Up) < 0.7f) return; //trying to vault to a wall
+
+		jump.Cancel();
+		GlobalPosition = VaultReader.GetCollisionPoint();
 	}
 //input
 	public void Jump() {
