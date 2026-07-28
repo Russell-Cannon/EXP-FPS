@@ -10,6 +10,8 @@ public partial class CameraEffects : Camera3D
     //Tracked values
     Vector3 BasePosition;
     Vector3 LeanDirection = Vector3.Up;
+    Vector3 InterpolatedLeanDirection = Vector3.Up;
+    float LeanSpeed = 0.5f;
     float LeanAmount = 0;
     Vector3 Velocity = Vector3.Zero;
     float Acceleration = 1f;
@@ -22,8 +24,11 @@ public partial class CameraEffects : Camera3D
     public override void _Process(double delta)
     {
         //Apply rotations
-        LeanAmount = Lerp.LerpHalfLife(LeanAmount, player.WallRunTime.PercentLeft, (float)delta, 0.05f);
-        Rotation = new Vector3(Rotation.X, Rotation.Y, Mathf.Pi * 0.125f * RotationStrength * LeanAmount * GlobalBasis.X.Dot(LeanDirection));
+        if (GodotMath.AboutEqual(InterpolatedLeanDirection, Vector3.Up, 0.001f)) InterpolatedLeanDirection = Vector3.Up;
+        if (GodotMath.AboutEqual(InterpolatedLeanDirection, LeanDirection, 0.001f)) InterpolatedLeanDirection = LeanDirection;
+        InterpolatedLeanDirection = InterpolatedLeanDirection.Slerp(LeanDirection, 10f * (float)delta);
+        LeanAmount = Lerp.LerpHalfLife(LeanAmount, player.WallRunTime.PercentLeft, (float)delta, 0.1f/LeanSpeed);
+        Rotation = new Vector3(Rotation.X, Rotation.Y, Mathf.Pi * 0.125f * RotationStrength * LeanAmount * GlobalBasis.X.Dot(InterpolatedLeanDirection));
         
         //Apply translations
         Position += Velocity * (float)delta;
@@ -43,7 +48,11 @@ public partial class CameraEffects : Camera3D
     public void Jump() {}
     public void Lean(Vector3 WallNormal)
     {
-        LeanDirection = -WallNormal;
+        LeanDirection = (-WallNormal).Normalized();
+    }
+    public void EndLean()
+    {
+        LeanDirection = Vector3.Up;
     }
     public void Vault(Vector3 Point)
     {

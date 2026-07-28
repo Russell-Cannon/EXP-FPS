@@ -62,7 +62,10 @@ public partial class Player : CharacterBody3D
 			}
 		};
 		StateMachine.StartWallRun += WallRunTime.Set;
-		StateMachine.StopWallRun += WallRunTime.Cancel;
+		StateMachine.StopWallRun += () => {
+			WallRunTime.Cancel();
+			Camera.EndLean();
+		};
     }
 	
     public override void _Input(InputEvent @event) {
