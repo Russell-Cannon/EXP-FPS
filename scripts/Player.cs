@@ -11,6 +11,7 @@ public partial class Player : CharacterBody3D
 	[Export] RayCast3D WallReader;
 	[Export] RayCast3D GroundReader;
 	[Export] RayCast3D StepUpReader;
+	[Export] RayCast3D HeadSpaceReader;
 	public Vector2 MoveInput;
 	public PlayerStateMachine StateMachine = new();
 	Vector3 groundSurfaceNormal = Vector3.Up;
@@ -66,12 +67,6 @@ public partial class Player : CharacterBody3D
 		if (Input.IsActionJustPressed("move_slide"))
 			AttemptSlide();
 
-		if (Input.IsActionJustReleased("move_slide")) {
-			StateMachine.CurrentState = PlayerStateMachine.State.Airborne;
-			if (GroundReader.IsColliding())
-				GlobalPosition += Vector3.Up;
-		}
-
 		if (Input.IsActionJustPressed("console"))
 			Velocity += 20f * -Camera.GlobalBasis.Z;
 
@@ -105,6 +100,16 @@ public partial class Player : CharacterBody3D
 		StateMachine.Tick((float)delta);
 		if (StateMachine.CurrentState == PlayerStateMachine.State.Kicking) {
 			Kick();
+		}
+		// Check if we wanted to leave the slide
+		if (StateMachine.CurrentState == PlayerStateMachine.State.Sliding && !Input.IsActionPressed("move_slide")) {
+			if (HeadSpaceReader.IsColliding() && GroundReader.IsColliding()) {
+				//Grounded and no room to stand: give up for now
+			} else {
+				StateMachine.CurrentState = PlayerStateMachine.State.Airborne;
+				if (GroundReader.IsColliding())
+					GlobalPosition += Vector3.Up;
+			}
 		}
 
 		// Update collider
@@ -259,7 +264,7 @@ public partial class Player : CharacterBody3D
 	}
 	public void SlideMove(float delta) {
 		if (GroundReader.IsColliding()) {
-			groundSurfaceNormal = Vector3.Up;
+			groundSurfaceNormal = GroundReader.GetCollisionNormal();
 			lastSurfaceTouched = groundSurfaceNormal;
 			if (jump.Active) {
 				Jump();
@@ -274,6 +279,7 @@ public partial class Player : CharacterBody3D
 				Accelerate(-Velocity.Normalized(), delta, SlideFriction, MaxAcceleration/10f);
 			}
 		} else {
+			groundSurfaceNormal = Vector3.Up;
 			AirMove(delta);
 		}
 
