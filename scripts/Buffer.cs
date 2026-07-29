@@ -21,7 +21,7 @@ public class Buffer
     }
     public void Cancel() {
 		Active = false;
-		timer.Stop();
+		timer?.Stop();
     }
     private void countDown() {
         if (timer == null) {

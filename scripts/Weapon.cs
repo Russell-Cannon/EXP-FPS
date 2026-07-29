@@ -13,6 +13,8 @@ public partial class Weapon : RayCast3D
     }
     public void Shoot()
     {
+        //Tell host to show reflect this
+        
         //Instance projectile
         Rocket projectile = Constants.Instance.ROCKET_SCENE.Instantiate<Rocket>();
         GameWarden.Instance?.AddChild(projectile);

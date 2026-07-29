@@ -16,7 +16,7 @@ public partial class Message : Label
             Autostart = true,
             WaitTime = 30
         };
-        // timer.Timeout += QueueFree;
+        timer.Timeout += QueueFree;
         AddChild(timer);
     }
 

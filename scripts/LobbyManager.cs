@@ -19,7 +19,7 @@ public partial class LobbyManager : Node
 		{
 			ulong memberID = Steam.GetLobbyMemberByIndex(ID, i);
 			Members.Add(memberID);
-			warden.AddPlayer(memberID, memberID == Profile.Instance.ID);
+			warden.AddPlayer(memberID);
 		}
 	}
 
@@ -46,7 +46,7 @@ public partial class LobbyManager : Node
 	public void HandlePlayerJoined(ulong UID)
 	{
 		Console.Instance.Post(Steam.GetFriendPersonaName(UID) + " joined");
-		warden.AddPlayer(UID, false);
+		warden.AddPlayer(UID);
 		Members.Add(UID);
 	}
 	public void HandlePlayerLeft(ulong UID)

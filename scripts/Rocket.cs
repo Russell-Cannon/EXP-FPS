@@ -7,14 +7,15 @@ public partial class Rocket : Area3D
     [Export] RayCast3D rayCast;
     [Export] Node3D decalTransform;
     [Export] Decal decal;
-    [Export] Curve distanceFallOff;
+    [Export] Curve KnockBackFallOff;
+    [Export] Curve DamageFallOff;
 
     public ulong Author;
     Vector3 Direction;
     public const float Speed = 50f;
     public const float Radius = 0.25f;
     public const float KnockBack = 12.5f;
-
+    public const int MaxDamage = 65;
     public override void _PhysicsProcess(double delta)
     {
         if (rayCast.IsColliding())
@@ -26,8 +27,6 @@ public partial class Rocket : Area3D
             //Do damage
             SplashDamage();
             
-            //Tell Host
-
             //Delete
             QueueFree();
         } else
@@ -64,13 +63,12 @@ public partial class Rocket : Area3D
         Array<Node3D> bodies = GetOverlappingBodies();
         foreach (Node3D n in bodies)
         {
-            if (n is Player)
+            if (n is Character)
             {
-                Player p = n as Player;   
-                p.Velocity += KnockBack*GlobalPosition.DirectionTo(p.Collider.GlobalPosition)*distanceFallOff.SampleBaked(GlobalPosition.DistanceTo(p.Collider.GlobalPosition));
-            } else if (n is Actor)
-            {
-                //tell warden
+                Character c = n as Character;
+                float distance = GlobalPosition.DistanceTo(c.Collider.GlobalPosition);
+                c.Velocity += KnockBack*GlobalPosition.DirectionTo(c.Collider.GlobalPosition)*KnockBackFallOff.SampleBaked(distance);
+                GameWarden.Instance?.DealDamage(c.ID, (int)((float)MaxDamage*DamageFallOff.SampleBaked(distance)));
             }
         }
     }

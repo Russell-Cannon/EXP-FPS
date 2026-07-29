@@ -2,11 +2,9 @@ using System;
 using Godot;
 using GodotSteam;
 
-public partial class Player : CharacterBody3D
+public partial class Player : Character
 {
 	[Export] public CameraEffects Camera;
-	[Export] public CollisionShape3D Collider;
-	[Export] CapsuleShape3D Shape;
 	[Export] RayCast3D KickRayCast;
 	[Export] RayCast3D WallReader;
 	[Export] RayCast3D GroundReader;
@@ -45,6 +43,7 @@ public partial class Player : CharacterBody3D
 	//Godot calls
 	public override void _Ready() {
 		Game.Instance.HideMouse();
+		SetID(Profile.Instance.ID);
 		AddChild(kickInput);
 		kickInput.HeldLong += () =>
 		{

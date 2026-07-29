@@ -2,23 +2,19 @@ using Godot;
 using System;
 using GodotSteam;
 
-public partial class Actor : CharacterBody3D
+public partial class Actor : Character
 {
     [Export] public Label3D nameTag;
-	[Export] CollisionShape3D Collider;
-	[Export] CapsuleShape3D Shape;
     [Export] CapsuleMesh Mesh;
     [Export] CsgShape3D CSGShape;
     [Export] Node3D Neck;
-    public ulong ID { get; private set;}
     public Vector3 KnownPosition = Vector3.Zero;
     public Vector2 KnownRotation = Vector2.Zero;
-    public PlayerStateMachine.State State;
     Buffer interpolating = new(0.025f);
-    public void SetID(ulong id)
+    public override void SetID(ulong id)
     {
-        ID = id;
         nameTag.Text = Steam.GetFriendPersonaName(id);
+        base.SetID(id);
     }
     public void _SetPosition(Vector3 _Position)
     {

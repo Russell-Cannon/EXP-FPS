@@ -81,6 +81,9 @@ public partial class Network : Node
 			case "update":
 				GameWarden.Instance?.Parse(dictionary, author);
 				break;
+			case "damage":
+				GameWarden.Instance?.TakeDamage((ulong)dictionary["target"], (int)dictionary["damage"]);
+				break;
 		}
 	}
 }

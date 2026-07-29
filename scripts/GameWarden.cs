@@ -24,13 +24,13 @@ public partial class GameWarden : Node
         Instance = null;
     }
     // Manage players
-    public void AddPlayer(ulong ID, bool Local) {
-        if (Local) {
-            GD.Print("Player created: " + ID);
+    public void AddPlayer(ulong ID) {
+        if (ID == Profile.Instance.ID) {
+            Console.Instance.Post("Player created: " + ID);
             LocalPlayer = Constants.Instance.PLAYER_SCENE.Instantiate<Player>();
             Map.AddChild(LocalPlayer);
         } else {
-            GD.Print("Actor created: " + ID);
+            Console.Instance.Post("Actor created: " + ID);
             Actor a = Constants.Instance.ACTOR_SCENE.Instantiate<Actor>();
             a.SetID(ID);
             Map.AddChild(a);
@@ -40,14 +40,20 @@ public partial class GameWarden : Node
     public void RemovePlayer(ulong ID) {
         for (int i = Actors.Count - 1; i >= 0; i--) {
             if (Actors[i].ID == ID) {
-                KillPlayer(Actors[i]);
+                Actors[i].QueueFree();
                 Actors.RemoveAt(i);
             }
         }
     }
-    public void KillPlayer(Actor actor)
+    public void KillCharacter(ulong ID)
     {
-        actor.QueueFree();
+        GetCharacter(ID).QueueFree();
+    }
+    public Character GetCharacter(ulong ID)
+    {
+        if (ID == Profile.Instance.ID)
+            return LocalPlayer;
+        return GetActor(ID);
     }
     public Actor GetActor(ulong ID)
     {
@@ -61,6 +67,36 @@ public partial class GameWarden : Node
         return null;
     }
     // RPC
+    public void DealDamage(ulong TargetID, int Damage)
+    {
+        if (Damage == 0) return;
+
+        //Tell everyone else to make this update
+        Network.Instance.SendPacketToAll(new Dictionary() {
+            {"type", "damage"}, 
+            {"damage", Damage},
+            {"target", TargetID}
+        }, true);
+
+        TakeDamage(TargetID, Damage);
+    }
+    public void TakeDamage(ulong TargetID, int Damage)
+    {
+        //Do damage to the person in question
+        GetCharacter(TargetID)?.Health.TakeDamage(Damage);
+
+        //If to the local player: tell everyone our new health
+        if (TargetID == Profile.Instance.ID)
+        {
+            Network.Instance.SendPacketToAll(new Dictionary()
+            {
+                {"type", "update"},
+                {"health", LocalPlayer.Health.Points}
+            }, true);
+        }
+    }
+
+    // Networking
     public void Report(Vector3 position, Vector3 velocity, Vector2 rotation, PlayerStateMachine.State state)
     {
         Network.Instance.SendPacketToAll(new Dictionary() {
@@ -83,6 +119,9 @@ public partial class GameWarden : Node
             GetActor(author)._SetRotation((Vector2)dict["rotation"]);
         }
         if (dict.ContainsKey("state")) {
+            GetActor(author).SetState((PlayerStateMachine.State)(int)dict["state"]);
+        }
+        if (dict.ContainsKey("health")) {
             GetActor(author).SetState((PlayerStateMachine.State)(int)dict["state"]);
         }
     }
