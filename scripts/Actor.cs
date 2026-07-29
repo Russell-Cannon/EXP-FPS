@@ -4,16 +4,18 @@ using GodotSteam;
 
 public partial class Actor : Character
 {
-    [Export] public Label3D nameTag;
+    [Export] public Label nameTag;
     [Export] CapsuleMesh Mesh;
     [Export] CsgShape3D CSGShape;
     [Export] Node3D Neck;
+    [Export] ColorRect healthBar;
     public Vector3 KnownPosition = Vector3.Zero;
     public Vector2 KnownRotation = Vector2.Zero;
     Buffer interpolating = new(0.025f);
     public override void SetID(ulong id)
     {
         nameTag.Text = Steam.GetFriendPersonaName(id);
+        Health.OnUpdate += (h) => {healthBar.CustomMinimumSize = new Vector2(h*504/100, 25);};
         base.SetID(id);
     }
     public void _SetPosition(Vector3 _Position)
