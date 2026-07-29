@@ -5,7 +5,7 @@ using GodotSteam;
 public partial class Player : CharacterBody3D
 {
 	[Export] public CameraEffects Camera;
-	[Export] CollisionShape3D Collider;
+	[Export] public CollisionShape3D Collider;
 	[Export] CapsuleShape3D Shape;
 	[Export] RayCast3D KickRayCast;
 	[Export] RayCast3D WallReader;

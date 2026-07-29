@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://7x0y3mkti6et"]
 
 [ext_resource type="Script" uid="uid://b483d8vnqbix0" path="res://scripts/Player.cs" id="1_4flbx"]
-[ext_resource type="Script" uid="uid://daqea0fs7v5th" path="res://scenes/CameraEffects.cs" id="2_g2els"]
+[ext_resource type="Script" uid="uid://daqea0fs7v5th" path="res://scripts/CameraEffects.cs" id="2_g2els"]
+[ext_resource type="Script" uid="uid://dlwhiaype8oc4" path="res://scripts/Weapon.cs" id="3_qhqgy"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sh265"]
 
@@ -38,6 +39,13 @@ player = NodePath("..")
 
 [node name="KickRayCast" type="RayCast3D" parent="camera" unique_id=1405611724]
 target_position = Vector3(0, 0, -2.5)
+
+[node name="Weapon" type="RayCast3D" parent="camera" unique_id=448144815 node_paths=PackedStringArray("player")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.30000007, 0.2)
+target_position = Vector3(0, 0, -50)
+hit_back_faces = false
+script = ExtResource("3_qhqgy")
+player = NodePath("../..")
 
 [node name="shape" type="CollisionShape3D" parent="." unique_id=706636824]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
