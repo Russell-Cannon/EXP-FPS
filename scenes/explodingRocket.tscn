@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://dki32yqltngs"]
+
+[ext_resource type="Script" uid="uid://cjwxirx7x67sw" path="res://scripts/ExplodingRocket.cs" id="1_3341w"]
+[ext_resource type="PackedScene" uid="uid://b2yunpssvkayh" path="res://scenes/charDecal.tscn" id="2_dkv7l"]
+
+[sub_resource type="Curve" id="Curve_dkv7l"]
+_limits = [0.0, 1.0, 0.0, 5.0]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0, Vector2(5, 0), -0.7630784, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="Curve" id="Curve_agf72"]
+_limits = [0.0, 1.0, 0.0, 5.0]
+_data = [Vector2(0, 1), 0.0, -0.38184074, 0, 0, Vector2(5, 0), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_dkv7l"]
+radius = 5.0
+
+[node name="ExplodingRocket" type="Node3D" unique_id=2016927410 node_paths=PackedStringArray("AreaOfEffect", "RayCast")]
+script = ExtResource("1_3341w")
+AreaOfEffect = NodePath("Area3D")
+KnockBackFallOff = SubResource("Curve_dkv7l")
+DamageFallOff = SubResource("Curve_agf72")
+RayCast = NodePath("RayCast3D")
+Debris = ExtResource("2_dkv7l")
+
+[node name="CSGSphere3D" type="CSGSphere3D" parent="." unique_id=141731951]
+radius = 0.25
+
+[node name="RayCast3D" type="RayCast3D" parent="." unique_id=801269976]
+hit_back_faces = false
+
+[node name="Area3D" type="Area3D" parent="." unique_id=1706690714]
+
+[node name="AreaOfEffect" type="CollisionShape3D" parent="Area3D" unique_id=1869946918]
+shape = SubResource("SphereShape3D_dkv7l")

@@ -4,11 +4,12 @@
 [ext_resource type="PackedScene" uid="uid://7x0y3mkti6et" path="res://scenes/player.tscn" id="2_msull"]
 [ext_resource type="PackedScene" uid="uid://c6jew74a78kcm" path="res://scenes/actor.tscn" id="3_2ghsw"]
 [ext_resource type="PackedScene" uid="uid://dvumo03xeatdw" path="res://scenes/platformtester.tscn" id="4_n5863"]
-[ext_resource type="PackedScene" uid="uid://dki32yqltngs" path="res://scenes/rocket.tscn" id="5_p1qcw"]
+[ext_resource type="PackedScene" uid="uid://dki32yqltngs" path="res://scenes/explodingRocket.tscn" id="5_p1qcw"]
+[ext_resource type="PackedScene" uid="uid://bfowv44c6edvj" path="res://scenes/rocket.tscn" id="6_syyxb"]
 
 [node name="Constants" type="Node" unique_id=1425553227]
 script = ExtResource("1_2mmdi")
 PLAYER_SCENE = ExtResource("2_msull")
 ACTOR_SCENE = ExtResource("3_2ghsw")
 GYM_SCENE = ExtResource("4_n5863")
-ROCKET_SCENE = ExtResource("5_p1qcw")
+AMMO_TYPES = Array[PackedScene]([ExtResource("5_p1qcw"), ExtResource("6_syyxb")])

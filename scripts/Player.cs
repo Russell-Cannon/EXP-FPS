@@ -92,8 +92,11 @@ public partial class Player : Character
 		} else {
 			MoveInput.Y = 0;
 		}
-        if (Input.IsActionPressed("fire") && weapon.CoolDown.Use())
-            weapon.Shoot();
+        if (Input.IsActionPressed("fire"))
+            weapon.Shoot(AmmoType.EXPLODING_ROCKET);
+
+        if (Input.IsActionJustPressed("alt_fire"))
+            weapon.Shoot(AmmoType.ROCKET);
 
 		MoveInput = MoveInput.Normalized();
 

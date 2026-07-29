@@ -2,30 +2,21 @@ using System;
 using Godot;
 using Godot.Collections;
 
-public partial class Rocket : Area3D
+public partial class Rocket : Ammunition
 {
-    [Export] RayCast3D rayCast;
-    [Export] Node3D decalTransform;
-    [Export] Decal decal;
-    [Export] Curve KnockBackFallOff;
-    [Export] Curve DamageFallOff;
-
-    public ulong Author;
-    Vector3 Direction;
-    public const float Speed = 50f;
-    public const float Radius = 0.25f;
-    public const float KnockBack = 12.5f;
-    public const int MaxDamage = 65;
+    public virtual float Speed {get;} = 100f;
+    public virtual float Radius {get;} = 0.25f;
+    public virtual float KnockBack {get;} = 12.5f;
     public override void _PhysicsProcess(double delta)
     {
-        if (rayCast.IsColliding())
+        if (RayCast.IsColliding())
         {
-            GlobalPosition = rayCast.GetCollisionPoint();
+            GlobalPosition = RayCast.GetCollisionPoint();
             //Spawn decal
             SpawnDecal();
 
             //Do damage
-            SplashDamage();
+            DealDamage();
             
             //Delete
             QueueFree();
@@ -35,42 +26,28 @@ public partial class Rocket : Area3D
             UpdateRayCast((float)delta);
         }
     }
-
-    public void SetDirection(Vector3 direction)
+    public void UpdateRayCast(float delta)
     {
-        Direction = direction;
-        UpdateRayCast(1);
+        RayCast.GlobalPosition = GlobalPosition - Direction*Radius;
+        RayCast.TargetPosition = Direction*(Speed*delta + Radius*2f);
     }
-    void UpdateRayCast(float delta)
+    public void SpawnDecal()
     {
-        rayCast.GlobalPosition = GlobalPosition - Direction*Radius;
-        rayCast.TargetPosition = Direction*(Speed*delta + Radius*2f);
-    }
-    void SpawnDecal()
-    {
-        decalTransform.Visible = true;
-        decalTransform.GlobalPosition = GlobalPosition;
-        if (rayCast.GetCollisionNormal() == Vector3.Up) 
-            decalTransform.RotateX(Mathf.Pi/2f);
+        Node3D Decal = Debris.Instantiate<Node3D>();
+        AddChild(Decal);
+        Decal.GlobalPosition = GlobalPosition;
+        if (RayCast.GetCollisionNormal() == Vector3.Up) 
+            Decal.RotateX(Mathf.Pi/2f);
         else 
-            decalTransform.LookAt(GlobalPosition + rayCast.GetCollisionNormal());
-        decal.RotateZ(GD.Randf()*Mathf.Tau);
-        decalTransform.Reparent(rayCast.GetCollider() as Node3D);
+            Decal.LookAt(GlobalPosition + RayCast.GetCollisionNormal());
+        Decal.Reparent(RayCast.GetCollider() as Node3D);
     }
-    void SplashDamage()
+    public virtual void DealDamage()
     {
-        if (!HasOverlappingBodies()) return;
-        Array<Node3D> bodies = GetOverlappingBodies();
-        foreach (Node3D n in bodies)
+        if (RayCast.GetCollider() is Character)
         {
-            if (n is Character)
-            {
-                Character c = n as Character;
-                float distance = GlobalPosition.DistanceTo(c.Collider.GlobalPosition);
-                c.Velocity += KnockBack*GlobalPosition.DirectionTo(c.Collider.GlobalPosition)*KnockBackFallOff.SampleBaked(distance);
-                if (Author == Profile.Instance.ID) //If locally owned: do damage
-                    GameWarden.Instance?.DealDamage(c.ID, (int)((float)MaxDamage*DamageFallOff.SampleBaked(distance)));
-            }
+            if (Author == Profile.Instance.ID) //If locally owned: do damage
+                GameWarden.Instance?.DealDamage((RayCast.GetCollider() as Character).ID, Damage);
         }
     }
 }

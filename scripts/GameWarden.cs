@@ -95,17 +95,18 @@ public partial class GameWarden : Node
             }, true);
         }
     }
-    public void TellSpawnProjectile(Vector3 Direction)
+    public void TellSpawnProjectile(Vector3 Direction, AmmoType type)
     {
         Network.Instance.SendPacketToAll(new Dictionary()
         {
             {"type", "projectile"},
-            {"direction", Direction}
+            {"direction", Direction},
+            {"ammo_type", (int)type},
         }, true);
     }
-    public void SpawnProjectile(Vector3 Direction, ulong author)
+    public void SpawnProjectile(Vector3 Direction, AmmoType type, ulong author)
     {
-        GetActor(author)?.weapon.SpawnProjectile(Direction);
+        GetActor(author)?.weapon.SpawnProjectile(Direction, type);
     }
 
     // Networking

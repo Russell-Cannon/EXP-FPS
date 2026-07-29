@@ -1,42 +1,17 @@
-[gd_scene format=3 uid="uid://dki32yqltngs"]
+[gd_scene format=3 uid="uid://bfowv44c6edvj"]
 
-[ext_resource type="Script" uid="uid://cjwxirx7x67sw" path="res://scripts/Rocket.cs" id="1_3341w"]
-[ext_resource type="Texture2D" uid="uid://m0pe3vdhp6w0" path="res://icon.svg" id="2_dkv7l"]
+[ext_resource type="Script" uid="uid://d37w0ar18kyuo" path="res://scripts/Rocket.cs" id="1_3341w"]
+[ext_resource type="PackedScene" uid="uid://b2yunpssvkayh" path="res://scenes/charDecal.tscn" id="2_dkv7l"]
+[ext_resource type="Material" uid="uid://ifvsgdvidfb" path="res://art/materials/test.tres" id="3_agf72"]
 
-[sub_resource type="Curve" id="Curve_dkv7l"]
-_limits = [0.0, 1.0, 0.0, 5.0]
-_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0, Vector2(5, 0), -0.7630784, 0.0, 0, 0]
-point_count = 3
-
-[sub_resource type="Curve" id="Curve_agf72"]
-_limits = [0.0, 1.0, 0.0, 5.0]
-_data = [Vector2(0, 1), 0.0, -0.38184074, 0, 0, Vector2(5, 0), 0.0, 0.0, 0, 0]
-point_count = 2
-
-[sub_resource type="SphereShape3D" id="SphereShape3D_dkv7l"]
-radius = 5.0
-
-[node name="Rocket" type="Area3D" unique_id=1247399091 node_paths=PackedStringArray("rayCast", "decalTransform", "decal")]
+[node name="rocket" type="Node3D" unique_id=2016927410 node_paths=PackedStringArray("RayCast")]
 script = ExtResource("1_3341w")
-rayCast = NodePath("RayCast3D")
-decalTransform = NodePath("DecalTransform")
-decal = NodePath("DecalTransform/Decal")
-KnockBackFallOff = SubResource("Curve_dkv7l")
-DamageFallOff = SubResource("Curve_agf72")
+RayCast = NodePath("RayCast3D")
+Debris = ExtResource("2_dkv7l")
 
 [node name="CSGSphere3D" type="CSGSphere3D" parent="." unique_id=141731951]
+material_overlay = ExtResource("3_agf72")
 radius = 0.25
 
 [node name="RayCast3D" type="RayCast3D" parent="." unique_id=801269976]
 hit_back_faces = false
-
-[node name="AreaOfEffect" type="CollisionShape3D" parent="." unique_id=1869946918]
-shape = SubResource("SphereShape3D_dkv7l")
-
-[node name="DecalTransform" type="Node3D" parent="." unique_id=53670587]
-visible = false
-
-[node name="Decal" type="Decal" parent="DecalTransform" unique_id=418537927]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
-size = Vector3(1, 0.1, 1)
-texture_albedo = ExtResource("2_dkv7l")

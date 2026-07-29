@@ -8,7 +8,7 @@ public partial class Constants : Node
   [Export] public PackedScene PLAYER_SCENE;
   [Export] public PackedScene ACTOR_SCENE;
   [Export] public PackedScene GYM_SCENE;
-  [Export] public PackedScene ROCKET_SCENE;
+  [Export] public PackedScene[] AMMO_TYPES;
   public override void _Ready()
   {
     Instance = this;
