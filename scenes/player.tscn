@@ -18,17 +18,18 @@ ambient_light_color = Color(1, 1, 1, 1)
 
 [sub_resource type="CapsuleMesh" id="CapsuleMesh_4flbx"]
 
-[node name="player" type="CharacterBody3D" unique_id=152232293 node_paths=PackedStringArray("Camera", "Collider", "KickRayCast", "WallReader", "GroundReader", "StepUpReader", "HeadSpaceReader", "VaultReader")]
+[node name="player" type="CharacterBody3D" unique_id=152232293 node_paths=PackedStringArray("Camera", "KickRayCast", "WallReader", "GroundReader", "StepUpReader", "HeadSpaceReader", "VaultReader", "Collider", "weapon")]
 script = ExtResource("1_4flbx")
 Camera = NodePath("camera")
-Collider = NodePath("shape")
-Shape = SubResource("CapsuleShape3D_sh265")
 KickRayCast = NodePath("camera/KickRayCast")
 WallReader = NodePath("WallReader")
 GroundReader = NodePath("GroundReader")
 StepUpReader = NodePath("StepUpReader")
 HeadSpaceReader = NodePath("HeadSpaceReader")
 VaultReader = NodePath("VaultReader")
+Collider = NodePath("shape")
+Shape = SubResource("CapsuleShape3D_sh265")
+weapon = NodePath("camera/Weapon")
 
 [node name="camera" type="Camera3D" parent="." unique_id=658672035 node_paths=PackedStringArray("player")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
@@ -40,12 +41,12 @@ player = NodePath("..")
 [node name="KickRayCast" type="RayCast3D" parent="camera" unique_id=1405611724]
 target_position = Vector3(0, 0, -2.5)
 
-[node name="Weapon" type="RayCast3D" parent="camera" unique_id=448144815 node_paths=PackedStringArray("player")]
+[node name="Weapon" type="RayCast3D" parent="camera" unique_id=448144815 node_paths=PackedStringArray("owner")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.2, -0.30000007, 0.2)
 target_position = Vector3(0, 0, -50)
 hit_back_faces = false
 script = ExtResource("3_qhqgy")
-player = NodePath("../..")
+owner = NodePath("../..")
 
 [node name="shape" type="CollisionShape3D" parent="." unique_id=706636824]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

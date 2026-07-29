@@ -55,7 +55,7 @@ public partial class Rocket : Area3D
         else 
             decalTransform.LookAt(GlobalPosition + rayCast.GetCollisionNormal());
         decal.RotateZ(GD.Randf()*Mathf.Tau);
-        decalTransform.Reparent(GameWarden.Instance);
+        decalTransform.Reparent(rayCast.GetCollider() as Node3D);
     }
     void SplashDamage()
     {
@@ -68,7 +68,8 @@ public partial class Rocket : Area3D
                 Character c = n as Character;
                 float distance = GlobalPosition.DistanceTo(c.Collider.GlobalPosition);
                 c.Velocity += KnockBack*GlobalPosition.DirectionTo(c.Collider.GlobalPosition)*KnockBackFallOff.SampleBaked(distance);
-                GameWarden.Instance?.DealDamage(c.ID, (int)((float)MaxDamage*DamageFallOff.SampleBaked(distance)));
+                if (Author == Profile.Instance.ID) //If locally owned: do damage
+                    GameWarden.Instance?.DealDamage(c.ID, (int)((float)MaxDamage*DamageFallOff.SampleBaked(distance)));
             }
         }
     }

@@ -84,6 +84,9 @@ public partial class Network : Node
 			case "damage":
 				GameWarden.Instance?.TakeDamage((ulong)dictionary["target"], (int)dictionary["damage"]);
 				break;
+			case "projectile":
+				GameWarden.Instance?.SpawnProjectile((Vector3)dictionary["direction"], author);
+				break;
 		}
 	}
 }

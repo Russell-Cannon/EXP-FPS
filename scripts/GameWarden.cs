@@ -95,6 +95,18 @@ public partial class GameWarden : Node
             }, true);
         }
     }
+    public void TellSpawnProjectile(Vector3 Direction)
+    {
+        Network.Instance.SendPacketToAll(new Dictionary()
+        {
+            {"type", "projectile"},
+            {"direction", Direction}
+        }, true);
+    }
+    public void SpawnProjectile(Vector3 Direction, ulong author)
+    {
+        GetActor(author)?.weapon.SpawnProjectile(Direction);
+    }
 
     // Networking
     public void Report(Vector3 position, Vector3 velocity, Vector2 rotation, PlayerStateMachine.State state)
@@ -122,7 +134,7 @@ public partial class GameWarden : Node
             GetActor(author).SetState((PlayerStateMachine.State)(int)dict["state"]);
         }
         if (dict.ContainsKey("health")) {
-            GetActor(author).SetState((PlayerStateMachine.State)(int)dict["state"]);
+            GetActor(author).SetState((PlayerStateMachine.State)(int)dict["health"]);
         }
     }
 }
