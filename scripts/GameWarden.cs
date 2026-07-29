@@ -26,11 +26,11 @@ public partial class GameWarden : Node
     // Manage players
     public void AddPlayer(ulong ID) {
         if (ID == Profile.Instance.ID) {
-            Console.Instance.Post("Player created: " + ID);
+            Console.Instance.Post("Player created: " + ID, true);
             LocalPlayer = Constants.Instance.PLAYER_SCENE.Instantiate<Player>();
             Map.AddChild(LocalPlayer);
         } else {
-            Console.Instance.Post("Actor created: " + ID);
+            Console.Instance.Post("Actor created: " + ID, true);
             Actor a = Constants.Instance.ACTOR_SCENE.Instantiate<Actor>();
             a.SetID(ID);
             Map.AddChild(a);

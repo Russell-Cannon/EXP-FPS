@@ -26,7 +26,7 @@ public partial class Profile : Node
 		ID = Steam.GetSteamID();
 		Name = Steam.GetPersonaName();
 
-		Console.Instance.Post($"Successfully initialized Steam. Hello {Name} ({ID})");
+		Console.Instance.Post($"Successfully initialized Steam. Hello {Name} ({ID})", true);
 	}
 
 }

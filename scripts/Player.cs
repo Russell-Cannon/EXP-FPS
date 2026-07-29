@@ -44,6 +44,8 @@ public partial class Player : Character
 	public override void _Ready() {
 		Game.Instance.HideMouse();
 		SetID(Profile.Instance.ID);
+		Health.OnUpdate += (points) => {DebugInfo.Instance.Post("health", "Health: " + points);};
+		Health.Set(100);
 		AddChild(kickInput);
 		kickInput.HeldLong += () =>
 		{
@@ -73,9 +75,6 @@ public partial class Player : Character
 
 		if (Input.IsActionJustPressed("move_slide"))
 			AttemptSlide();
-
-		if (Input.IsActionJustPressed("console"))
-			Velocity += 20f * -Camera.GlobalBasis.Z;
 
 		if (Input.IsActionPressed("move_right")) {
 			MoveInput.X = 1;
@@ -169,7 +168,8 @@ public partial class Player : Character
 			//If we are not colliding with anything and we think we are walking
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
 		}
-		GD.Print(StateMachine.CurrentState + ": " + GodotMath.XZ(Velocity).Length());
+		DebugInfo.Instance.Post("state", ""+StateMachine.CurrentState);
+		DebugInfo.Instance.Post("speed", GodotMath.XZ(Velocity).Length() + " m/s");
 		GameWarden.Instance?.Report(GlobalPosition, Velocity, new Vector2(Rotation.Y, Camera.Rotation.X), StateMachine.CurrentState);
 		lastVelocity = Velocity;
 	}

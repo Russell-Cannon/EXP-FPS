@@ -39,16 +39,28 @@ public partial class MatchMaker : Node
     }
     public void Host()
     {
+        if (Lobby != null)
+        {
+            Console.Instance.Post("You are currently in a match.");
+            return;
+        }
+
         Console.Instance.Post("Creating match...");
         Steam.CreateLobby(Steam.LobbyType.Public, MAX_PLAYERS);
     }
     public void Join(ulong lobby)
     {
-        Console.Instance.Post("Found match " + lobby);
+        Console.Instance.Post("Found match " + lobby, true);
 		Steam.JoinLobby(lobby);
     }
     public void FindMatch()
     {
+        if (Lobby != null)
+        {
+            Console.Instance.Post("You are currently in a match.");
+            return;
+        }
+
         Console.Instance.Post("Looking for matches...");
         //Limit to non-full lobbies
         Steam.AddRequestLobbyListFilterSlotsAvailable(1);
@@ -61,7 +73,11 @@ public partial class MatchMaker : Node
     }
     public void LeaveMatch()
     {
-		if (Lobby == null) return;
+        if (Lobby == null)
+        {
+            Console.Instance.Post("You are not currently in a match.");
+            return;
+        }
 
 		// Send leave request to Steam
 		Steam.LeaveLobby(Lobby.ID);
@@ -74,8 +90,10 @@ public partial class MatchMaker : Node
     }
     private void _matchListFound(Godot.Collections.Array lobbies)
     {
-        Console.Instance.Post("Lobbies found: " + lobbies);
+        Console.Instance.Post("Lobbies found: " + lobbies, true);
         if (lobbies.Count > 0) 
             Join((ulong)lobbies[0]);
+        else
+            Console.Instance.Post("No lobbies found.");
     }
 }

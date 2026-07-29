@@ -4,6 +4,7 @@ using System;
 public partial class Console : Control
 {
 	public static Console Instance {get; private set;} 
+	public bool DebugEnabled = false;
 	LineEdit input;
 	VBoxContainer chat;
 	// Called when the node enters the scene tree for the first time.
@@ -79,6 +80,9 @@ public partial class Console : Control
 				case "float 0":
 					Player.Gravity = 20f;
 					break;
+				case "debug":
+					DebugEnabled = true;
+					break;
 				default:
 					Post("Unknown command: " + command);
 					break;
@@ -86,13 +90,18 @@ public partial class Console : Control
 		} else {
 			Network.Instance.SendMessage(command);
 			Post(Profile.Instance.Name + ": " + command);
+			if (MatchMaker.Instance.Lobby == null)
+				Post("No one heard that.");
+			else if (MatchMaker.Instance.Lobby.Members.Count == 1)
+				Post("No one else is online.");
 		}
 		closeConsole();
 	}
 
-	public void Post(string message)
+	public void Post(string message, bool DebugMessage = false)
 	{
-		chat.AddChild(new Message(message));
+		if (DebugEnabled || !DebugMessage)
+			chat.AddChild(new Message(message));
 		GD.Print(message);
 	}
 

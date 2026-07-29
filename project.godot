@@ -24,6 +24,7 @@ MatchMaker="*uid://c421eo6uwcikn"
 Network="*uid://dbvp14ga56adu"
 Game="*uid://snw8fprebwsi"
 DebugLine="*uid://3u0gcqxulegr"
+DebugInfo="*uid://blfrve80vxnbf"
 
 [dotnet]
 
