@@ -4,34 +4,17 @@ using System;
 public partial class Weapon : RayCast3D
 {
     [Export] public Character owner;
-    public Gated[] CoolDown = {new(0.5f), new(0.5f)};
-    public const float KickBack = 2f;
-    public override void _Process(double delta)
+
+    public virtual void Shoot(AmmoType type)
     {
-        if (Game.Instance.IsMouseFree()) return;
-
-        if (Input.IsActionPressed("fire"))
-            Shoot(AmmoType.EXPLODING_ROCKET);
-
-        if (Input.IsActionPressed("alt_fire"))
-            Shoot(AmmoType.ROCKET);
-    }
-
-    public void Shoot(AmmoType type)
-    {
-        if (!CoolDown[(int)type].Use()) return;
-
         Vector3 dir = -GlobalBasis.Z;
         if (IsColliding())
             dir = GlobalPosition.DirectionTo(GetCollisionPoint());
 
         SpawnProjectile(dir, type);
         GameWarden.Instance?.TellSpawnProjectile(dir, type);
-
-        //Kick back the player
-        owner.Velocity += GlobalBasis.Z*KickBack;
     }
-    public void SpawnProjectile(Vector3 direction, AmmoType type)
+    public virtual void SpawnProjectile(Vector3 direction, AmmoType type)
     {
         //Instance projectile
         Ammunition projectile = Constants.Instance.AMMO_TYPES[(int)type].Instantiate<Ammunition>();
