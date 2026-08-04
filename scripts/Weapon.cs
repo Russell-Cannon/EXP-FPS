@@ -6,6 +6,17 @@ public partial class Weapon : RayCast3D
     [Export] public Character owner;
     public Gated[] CoolDown = {new(0.5f), new(0.5f)};
     public const float KickBack = 2f;
+    public override void _Process(double delta)
+    {
+        if (Game.Instance.IsMouseFree()) return;
+
+        if (Input.IsActionPressed("fire"))
+            Shoot(AmmoType.EXPLODING_ROCKET);
+
+        if (Input.IsActionPressed("alt_fire"))
+            Shoot(AmmoType.ROCKET);
+    }
+
     public void Shoot(AmmoType type)
     {
         if (!CoolDown[(int)type].Use()) return;

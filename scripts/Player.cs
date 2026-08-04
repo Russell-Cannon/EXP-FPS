@@ -37,7 +37,6 @@ public partial class Player : Character
 	Gated jumpCoolDown = new(0.125f);
 	Gated kickCoolDown = new(1f);
 	Gated slideCoolDown = new(1f);
-	HeldInput kickInput = new ("move_kick", 0.1f);
 	public Duration WallRunTime = new(3f);
 
 	//Godot calls
@@ -46,22 +45,6 @@ public partial class Player : Character
 		SetID(Profile.Instance.ID);
 		Health.OnUpdate += (points) => {DebugInfo.Instance.Post("health", "Health: " + points);};
 		Health.Set(100);
-		AddChild(kickInput);
-		kickInput.HeldLong += () =>
-		{
-			if (kickCoolDown.Ready) {
-				StateMachine.Set(PlayerStateMachine.State.KickWindUp);
-				kickCoolDown.Use();
-			}
-		};
-		kickInput.ShortPress += () =>
-		{
-			if (kickCoolDown.Ready && !GroundReader.IsColliding()) {
-				StateMachine.Set(PlayerStateMachine.State.Stalling);
-				RedirectMomentum();
-				kickCoolDown.Use();
-			}
-		};
 		StateMachine.StartWallRun += WallRunTime.Set;
 		StateMachine.StopWallRun += () => {
 			WallRunTime.Cancel();
@@ -70,6 +53,8 @@ public partial class Player : Character
     }
 	
     public override void _Input(InputEvent @event) {
+		if (Game.Instance.IsMouseFree()) return;
+		
 		if (Input.IsActionJustPressed("move_jump"))
 			jump.Set();
 
@@ -84,6 +69,13 @@ public partial class Player : Character
 			MoveInput.X = 0;
 		}
 
+		if (Input.IsActionJustPressed("move_kick") && kickCoolDown.Ready)
+		{
+			StateMachine.Set(PlayerStateMachine.State.KickWindUp);
+			kickCoolDown.Use();			
+		}
+
+
 		if (Input.IsActionPressed("move_up")) {
 			MoveInput.Y = -1;
 		} else if (Input.IsActionPressed("move_down")) {
@@ -91,11 +83,6 @@ public partial class Player : Character
 		} else {
 			MoveInput.Y = 0;
 		}
-        if (Input.IsActionPressed("fire"))
-            weapon.Shoot(AmmoType.EXPLODING_ROCKET);
-
-        if (Input.IsActionJustPressed("alt_fire"))
-            weapon.Shoot(AmmoType.ROCKET);
 
 		MoveInput = MoveInput.Normalized();
 
@@ -215,9 +202,14 @@ public partial class Player : Character
 		if (coyoteTime.Active && jump.Active)
 			Jump();
 
-		// Vault if we are trying to jump mid air
-		if (!coyoteTime.Active && jump.Active)
-			Vault();
+		// if we are trying to jump mid air
+		if (!coyoteTime.Active && jump.Active) {
+			if (VaultReader.IsColliding())
+				Vault();
+			else
+				StateMachine.Set(PlayerStateMachine.State.Stalling);
+				RedirectMomentum();
+		}
 
 		StepUp(delta);
 		//Accelerate if not going as fast as possible
@@ -326,8 +318,6 @@ public partial class Player : Character
 
 	}
 	public void AirStall(float delta) {
-		AirMove(delta);
-		
 		//Reduce Y-velocity
 		float Y = Lerp.LerpHalfLife(Velocity.Y, 0, delta, .1f/Acceleration);
 		Velocity = new Vector3(Velocity.X, Y, Velocity.Z);

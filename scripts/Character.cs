@@ -12,10 +12,11 @@ public partial class Character : CharacterBody3D
     public virtual void SetID(ulong id)
     {
         ID = id;
-        Health.OnDie += () =>
-        {
-            GameWarden.Instance?.KillCharacter(id);
-            GameWarden.Instance?.AddPlayer(id);
-        };
+        Health.OnDie += ReSpawn;
+    }
+    public virtual void ReSpawn()
+    {
+        GameWarden.Instance?.KillCharacter(ID);
+        GameWarden.Instance?.AddPlayer(ID);
     }
 }

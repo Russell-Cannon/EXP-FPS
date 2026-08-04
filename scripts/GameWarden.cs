@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public partial class GameWarden : Node
 {
 	public static GameWarden Instance { get; private set; }
-    public Player LocalPlayer;
+    public Player LocalPlayer = null;
     public List<Actor> Actors = new();
 	public Node3D Map;
     public override void _Ready()
@@ -16,12 +16,14 @@ public partial class GameWarden : Node
     }
     public override void _EnterTree()
     {
+        Game.Playing = true;
 		Instance = this;
     }
 
     public override void _ExitTree()
     {
         Instance = null;
+        Game.Playing = false;
     }
     // Manage players
     public void AddPlayer(ulong ID) {
@@ -48,6 +50,8 @@ public partial class GameWarden : Node
     public void KillCharacter(ulong ID)
     {
         GetCharacter(ID).QueueFree();
+        if (ID == Profile.Instance.ID)
+            LocalPlayer = null;
     }
     public Character GetCharacter(ulong ID)
     {

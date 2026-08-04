@@ -6,6 +6,7 @@ public partial class Game : Node
     public static Game Instance {get; private set;}
 	public Viewport Root;
 	public Node CurrentScene;
+	public static bool Playing = false;
 
     public override void _Ready() {
 		Root = GetTree().Root;

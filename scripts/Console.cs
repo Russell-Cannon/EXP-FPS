@@ -33,8 +33,7 @@ public partial class Console : Control
     public override void _Input(InputEvent @event)
 	{
 		if (Input.IsActionJustPressed("console") || Input.IsActionJustPressed("chat") && !input.Visible) {
-			input.Visible = true;
-			input.GrabFocus();
+			openConsole();
 			if (Input.IsActionJustPressed("chat"))
 				GetViewport().SetInputAsHandled();
 		}
@@ -46,7 +45,8 @@ public partial class Console : Control
 
 	public void Execute(string command)
 	{
-		if (command[0] == '/') {
+		if (command.Length == 0) { }
+		else if (command[0] == '/') {
 			//Ignore starting character and case
 			switch (command.ToLower()[1..])
 			{
@@ -69,6 +69,13 @@ public partial class Console : Control
 							lobbyInfo += member + " ";
 						Post(lobbyInfo + "}");
 					}
+					break;
+				case "kill":
+					if (GameWarden.Instance == null)
+						Post("Not in a game");
+					else if (GameWarden.Instance.LocalPlayer == null)
+						Post("Not alive");
+					else GameWarden.Instance.LocalPlayer.ReSpawn();
 					break;
 				case "version":
 					Post(Constants.Instance.VERSION);
@@ -110,5 +117,12 @@ public partial class Console : Control
 		input.ReleaseFocus();
 		input.Visible = false;
 		input.Text = "";
+		if (Game.Playing) Game.Instance.HideMouse();
+	}
+	void openConsole()
+	{
+		input.Visible = true;
+		input.GrabFocus();
+		Game.Instance.FreeMouse();
 	}
 }
