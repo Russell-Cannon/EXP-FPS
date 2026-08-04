@@ -24,6 +24,8 @@ public partial class Player : Character
 	public const float MaxAcceleration = 1;
 	public const float WallRunMinimumSpeed = 3;
 	public const float WallRunMaximumSpeed = 15;
+	public const float WallJumpMultiplierHorizontal = 0.75f;
+	public const float WallJumpMultiplierVertical = 0.9f;
 	public const float Mass = 70;
 	public const float JumpForce = 7f;
 	public const float RoofRebound = 0.02f;
@@ -37,6 +39,7 @@ public partial class Player : Character
 	Gated jumpCoolDown = new(0.125f);
 	Gated kickCoolDown = new(1f);
 	Gated slideCoolDown = new(1f);
+	Gated canStall = new(1f);
 	public Duration WallRunTime = new(3f);
 
 	//Godot calls
@@ -204,11 +207,14 @@ public partial class Player : Character
 
 		// if we are trying to jump mid air
 		if (!coyoteTime.Active && jump.Active) {
-			if (VaultReader.IsColliding())
+			if (VaultReader.IsColliding()) {
 				Vault();
-			else
+				jump.Cancel();
+			} else if (canStall.Use()) {
 				StateMachine.Set(PlayerStateMachine.State.Stalling);
 				RedirectMomentum();
+				jump.Cancel();
+			}
 		}
 
 		StepUp(delta);
@@ -222,6 +228,7 @@ public partial class Player : Character
 	}
 
 	private void GroundMove(float delta) {
+		canStall.Reset();
 		lastSurfaceTouched = groundSurfaceNormal;
 		if (jump.Active) { //Jump the second we hit the floor without applying friction
 			Jump();
@@ -234,6 +241,7 @@ public partial class Player : Character
 		}
 	}
 	private void WallMove(float delta) {
+		canStall.Reset();
 		lastSurfaceTouched = wallSurfaceNormal;
 		if (jumpCoolDown.Ready)
 			coyoteTime.Set();
@@ -289,6 +297,7 @@ public partial class Player : Character
 	}
 	public void SlideMove(float delta) {
 		if (GroundReader.IsColliding()) {
+			canStall.Reset();
 			groundSurfaceNormal = GroundReader.GetCollisionNormal();
 			lastSurfaceTouched = groundSurfaceNormal;
 			if (jump.Active) {
@@ -367,7 +376,6 @@ public partial class Player : Character
 		if (!VaultReader.IsColliding()) return;
 		if (VaultReader.GetCollisionNormal().Dot(Vector3.Up) < 0.7f) return; //trying to vault to a wall
 
-		jump.Cancel();
 		Camera.Vault(VaultReader.GetCollisionPoint());
 		GlobalPosition = VaultReader.GetCollisionPoint();
 	}
@@ -381,9 +389,9 @@ public partial class Player : Character
 			Velocity += -Velocity.Project(Vector3.Down); 
 		
 		// Add jump force
-		if (lastSurfaceTouched == wallSurfaceNormal) {
-			Velocity += JumpForce * (Vector3.Up + (lastSurfaceTouched - GodotMath.XZ(Camera.GlobalBasis.Z)).Normalized());
-		} else {
+		if (lastSurfaceTouched == wallSurfaceNormal) { //wall jump
+			Velocity += JumpForce * (Vector3.Up*WallJumpMultiplierVertical + (lastSurfaceTouched - GodotMath.XZ(Camera.GlobalBasis.Z)).Normalized()*WallJumpMultiplierHorizontal);
+		} else { //ground jump
 			Velocity += JumpForce * Vector3.Up;
 		}
 		

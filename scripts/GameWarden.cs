@@ -16,14 +16,14 @@ public partial class GameWarden : Node
     }
     public override void _EnterTree()
     {
-        Game.Playing = true;
+        Game.Instance.Playing = true;
 		Instance = this;
     }
 
     public override void _ExitTree()
     {
         Instance = null;
-        Game.Playing = false;
+        Game.Instance.Playing = false;
     }
     // Manage players
     public void AddPlayer(ulong ID) {

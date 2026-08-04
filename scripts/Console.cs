@@ -117,7 +117,7 @@ public partial class Console : Control
 		input.ReleaseFocus();
 		input.Visible = false;
 		input.Text = "";
-		if (Game.Playing) Game.Instance.HideMouse();
+		if (Game.Instance.Playing) Game.Instance.HideMouse();
 	}
 	void openConsole()
 	{

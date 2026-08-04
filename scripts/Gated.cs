@@ -23,6 +23,11 @@ public class Gated
 		}
 		return false;
     }
+    public void Reset()
+    {
+        Ready = true;
+        timer?.Stop();
+    }
     private void countDown() {
         if (timer == null) {
             timer = new() {
