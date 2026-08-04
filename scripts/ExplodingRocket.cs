@@ -7,6 +7,7 @@ public partial class ExplodingRocket : Rocket
     [Export] public Area3D AreaOfEffect;
     [Export] public Curve KnockBackFallOff;
     [Export] public Curve DamageFallOff;
+    public float FriendlyFireMultiplier = 0.7f;
     public override float Speed {get;} = 50f;
 
     public override void DealDamage()
@@ -20,8 +21,12 @@ public partial class ExplodingRocket : Rocket
                 Character c = n as Character;
                 float distance = GlobalPosition.DistanceTo(c.Collider.GlobalPosition);
                 c.Velocity += KnockBack*GlobalPosition.DirectionTo(c.Collider.GlobalPosition)*KnockBackFallOff.SampleBaked(distance);
-                if (Author == Profile.Instance.ID) //If locally owned: do damage
-                    GameWarden.Instance?.DealDamage(c.ID, (int)((float)Damage*DamageFallOff.SampleBaked(distance)));
+                if (Author == Profile.Instance.ID) //If locally owned: do damage 
+                {
+                    float calculatedDamage = Damage*DamageFallOff.SampleBaked(distance);
+                    if (Author == c.ID) calculatedDamage *= FriendlyFireMultiplier; //reduce damage down to self
+                    GameWarden.Instance?.DealDamage(c.ID, (int)calculatedDamage);
+                }
             }
         }
     }
