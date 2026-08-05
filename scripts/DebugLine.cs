@@ -22,7 +22,9 @@ public partial class DebugLine : MeshInstance3D
     }
     public override void _Process(double delta) 
     {
-        if (Lines.Count == 0) return;
+        mesh.ClearSurfaces();
+        if (Lines.Count == 0)
+            return;
         if (cam == null || !IsInstanceValid(cam)) {
             cam = GetViewport().GetCamera3D();
             return;

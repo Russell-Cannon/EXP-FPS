@@ -33,7 +33,6 @@ public partial class Rocket : Ammunition
         Vector3 dir = GetVelocity().Normalized();
         RayCast.GlobalPosition = GlobalPosition - dir*Radius;
         RayCast.TargetPosition = GetVelocity()*delta + dir*Radius*2f;
-        DebugLine.Instance.DrawLine(RayCast.GlobalPosition, RayCast.GlobalPosition + RayCast.TargetPosition);
     }
     public virtual void SpawnDecal()
     {
