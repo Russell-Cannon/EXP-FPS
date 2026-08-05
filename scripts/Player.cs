@@ -35,7 +35,7 @@ public partial class Player : Character
 	public const float SlopeForce = 10f;
 	public const float WallDirectionInfluence = 0.4f;
 	public float Gravity = 20;
-	Buffer jump = new(0.125f);
+	Buffer jump = new(0.01f);
 	Buffer coyoteTime = new(0.125f);
 	Gated jumpCoolDown = new(0.125f);
 	Gated kickCoolDown = new(1f);
@@ -61,9 +61,6 @@ public partial class Player : Character
 		
 		if (Input.IsActionJustPressed("move_jump"))
 			jump.Set();
-
-		if (Input.IsActionJustPressed("move_slide"))
-			AttemptSlide();
 
 		if (Input.IsActionPressed("move_right")) {
 			MoveInput.X = 1;
@@ -103,24 +100,6 @@ public partial class Player : Character
 		if (StateMachine.CurrentState == PlayerStateMachine.State.Kicking) {
 			Kick();
 		}
-		// Check if we wanted to leave the slide
-		if (StateMachine.CurrentState == PlayerStateMachine.State.Sliding && !Input.IsActionPressed("move_slide")) {
-			if (HeadSpaceReader.IsColliding() && GroundReader.IsColliding()) {
-				//Grounded and no room to stand: give up for now
-			} else {
-				ResetState();
-				StateMachine.CurrentState = PlayerStateMachine.State.Airborne;
-				if (GroundReader.IsColliding())
-					GlobalPosition += Vector3.Up;
-			}
-		}
-
-		// Update collider
-		if (StateMachine.CurrentState == PlayerStateMachine.State.Sliding || StateMachine.CurrentState == PlayerStateMachine.State.Stalling || StateMachine.CurrentState == PlayerStateMachine.State.Kicking || StateMachine.CurrentState == PlayerStateMachine.State.KickWindUp) {
-			Crouch();
-		} else {
-			Stand();
-		}
 
 		// Move
 		if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
@@ -152,9 +131,7 @@ public partial class Player : Character
 		//Update grounded state
 		if (GroundReader.IsColliding() && Vector3.Up.Dot(GroundReader.GetCollisionNormal()) > 0.5f) {
 			groundSurfaceNormal = GroundReader.GetCollisionNormal();
-			if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne)
-				Camera.Land(lastVelocity.Y);
-			StateMachine.Set(PlayerStateMachine.State.Walking);
+			HandleFloorTouch();
 		} else if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
 			//If we are not colliding with anything and we think we are walking
 			StateMachine.Set(PlayerStateMachine.State.Airborne);
@@ -179,9 +156,7 @@ public partial class Player : Character
 			Velocity += normal * RoofRebound * Vector3.Down.Dot(normal);
 		} else if (Vector3.Up.Dot(normal) > 0.5f) { //floor
 			groundSurfaceNormal = normal;
-			if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne)
-				Camera.Land(lastVelocity.Y);
-			StateMachine.Set(PlayerStateMachine.State.Walking);
+			HandleFloorTouch();
 		} else { //wall
 			// Attempt to wall running
 			wallSurfaceNormal = normal;
@@ -191,7 +166,16 @@ public partial class Player : Character
 			}
 		}
 	}
+	void HandleFloorTouch()
+	{
+		// If jumped too recently don't let the player begin walking
+		if (!jumpCoolDown.Ready) return;
 
+		if (StateMachine.CurrentState == PlayerStateMachine.State.Airborne)
+			Camera.Land(lastVelocity.Y);
+		if (StateMachine.CurrentState != PlayerStateMachine.State.Sliding) //don't leave a slide just because we are grounded
+			StateMachine.Set(PlayerStateMachine.State.Walking);
+	}
 	private Vector3 GetDesiredDirection()
 	{
 		return (MoveInput.X * GlobalBasis.X) + (MoveInput.Y * GlobalBasis.Z);
@@ -239,7 +223,11 @@ public partial class Player : Character
 
 			StepUp(delta);
 			Accelerate(GodotMath.AlignUpToNormal(groundSurfaceNormal, GetDesiredDirection()), delta);
+			
+			if (Input.IsActionPressed("move_slide"))
+				Slide();
 		}
+
 	}
 	private void WallMove(float delta) {
 		canStall.Reset();
@@ -297,35 +285,24 @@ public partial class Player : Character
 		Velocity = new Vector3(Velocity.X, Y, Velocity.Z);
 	}
 	public void SlideMove(float delta) {
-		if (GroundReader.IsColliding()) {
-			canStall.Reset();
-			groundSurfaceNormal = GroundReader.GetCollisionNormal();
-			lastSurfaceTouched = groundSurfaceNormal;
-			if (jump.Active) {
-				Jump();
-			} else {
-				//Slide the player down the slope
-				if (groundSurfaceNormal != Vector3.Up)
-					Velocity += SlopeForce * (groundSurfaceNormal - Vector3.Up).Normalized() * delta;
-				//Apply friction
-				Accelerate(-Velocity.Normalized(), delta, SlideFriction, MaxAcceleration/10f);
-			}
-		} else {
-			groundSurfaceNormal = Vector3.Up;
-
-			// Jump if we missed our chance while grounded
-			if (coyoteTime.Active && jump.Active)
-				Jump();
-
-			//Accelerate if not going as fast as possible
-			if (GetSpeed() < MaxSpeed) {
-				Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
-			} else if (GetDesiredDirection().Dot(GodotMath.XZ(Velocity)) < 0) {
-				//Decelerate if trying to
-				Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
-			}
+		//Check if we do not want to slide and we can stand up
+		if (!Input.IsActionPressed("move_slide") && !HeadSpaceReader.IsColliding()) {
+			Stand();
+			StateMachine.Set(PlayerStateMachine.State.Walking);
+			return;
 		}
 
+		if (jump.Active) {
+			Stand();
+			Jump();
+			return;
+		}
+
+		//Slide the player down the slope
+		if (groundSurfaceNormal != Vector3.Up)
+			Velocity += SlopeForce * (groundSurfaceNormal - Vector3.Up).Normalized() * delta;
+		//Apply friction
+		Accelerate(-Velocity.Normalized(), delta, SlideFriction, MaxAcceleration/10f);
 	}
 	public void AirStall(float delta) {
 		//Reduce Y-velocity
@@ -414,24 +391,21 @@ public partial class Player : Character
 		}
 		ResetState();
 	}
-	public void AttemptSlide() {
-		if (StateMachine.CurrentState == PlayerStateMachine.State.Walking) {
-			Slide();
-		}
-		StateMachine.Set(PlayerStateMachine.State.Sliding);
-	}
 	public void Slide() {
+		StateMachine.Set(PlayerStateMachine.State.Sliding);
 		if (slideCoolDown.Use()) 
 			Velocity += GodotMath.XZ(-Camera.GlobalBasis.Z) * SlideForce;
-		GlobalPosition -= new Vector3(0, 1, 0);
+		Crouch();
 	}
 	// State
 	public void Crouch() {
+		GlobalPosition += Vector3.Down;
 		Shape.Height = 1;
 		Collider.Position = new Vector3(0, 1.5f, 0);
 		GroundReader.Position = new Vector3(0, 1.0f, 0);
 	}
 	public void Stand() {
+		GlobalPosition += Vector3.Up;
 		Shape.Height = 2;
 		Collider.Position = new Vector3(0, 1.0f, 0);
 		GroundReader.Position = Vector3.Zero;

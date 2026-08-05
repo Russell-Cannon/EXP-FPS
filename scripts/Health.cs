@@ -9,8 +9,8 @@ public class Health
     public void TakeDamage(int damage)
     {
         if (Points - damage <= 0) {
-            OnDie?.Invoke();
             Set(0);
+            OnDie?.Invoke();
         } else {
             Set(Points - damage);
         }

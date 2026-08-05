@@ -17,5 +17,6 @@ public partial class Character : CharacterBody3D
     {
         GameWarden.Instance?.KillCharacter(ID);
         GameWarden.Instance?.AddPlayer(ID);
+        Health.Set(100);
     }
 }

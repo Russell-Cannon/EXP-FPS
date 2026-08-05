@@ -30,7 +30,6 @@ public partial class PlayerStateMachine
     public void Set(State state) {
         // Restrict some transitions
         if (state == State.WallRunning && CurrentState != State.Airborne && CurrentState != State.Stalling) return; // Do not begin wall running if not airborne
-        if (CurrentState == State.Sliding) return; // Do not do anything else if sliding
         if (CurrentState == State.KickWindUp && state == State.Kicking && Input.IsActionPressed("move_kick")) return; // Do not advance from wind up if still holding
 
         // Activate animations for some transitions

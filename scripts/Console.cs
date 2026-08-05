@@ -95,7 +95,7 @@ public partial class Console : Control
 						GameWarden.Instance.LocalPlayer.Gravity = 20f;
 					break;
 				case "debug":
-					DebugEnabled = true;
+					DebugEnabled = !DebugEnabled;
 					break;
 				default:
 					Post("Unknown command: " + command);
