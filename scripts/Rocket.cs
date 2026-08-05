@@ -4,9 +4,7 @@ using Godot.Collections;
 
 public partial class Rocket : Ammunition
 {
-    public virtual float Speed {get;} = 100f;
     public virtual float Radius {get;} = 0.25f;
-    public virtual float KnockBack {get;} = 12.5f;
     public override void _PhysicsProcess(double delta)
     {
         if (RayCast.IsColliding())
@@ -22,16 +20,22 @@ public partial class Rocket : Ammunition
             QueueFree();
         } else
         {
-            GlobalPosition += Direction*Speed*(float)delta;
+            GlobalPosition += GetVelocity()*(float)delta;
             UpdateRayCast((float)delta);
         }
     }
-    public void UpdateRayCast(float delta)
+    public virtual Vector3 GetVelocity()
     {
-        RayCast.GlobalPosition = GlobalPosition - Direction*Radius;
-        RayCast.TargetPosition = Direction*(Speed*delta + Radius*2f);
+        return Direction*Speed;
     }
-    public void SpawnDecal()
+    public virtual void UpdateRayCast(float delta)
+    {
+        Vector3 dir = GetVelocity().Normalized();
+        RayCast.GlobalPosition = GlobalPosition - dir*Radius;
+        RayCast.TargetPosition = GetVelocity()*delta + dir*Radius*2f;
+        DebugLine.Instance.DrawLine(RayCast.GlobalPosition, RayCast.GlobalPosition + RayCast.TargetPosition);
+    }
+    public virtual void SpawnDecal()
     {
         Node3D Decal = Debris.Instantiate<Node3D>();
         AddChild(Decal);

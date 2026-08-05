@@ -71,21 +71,28 @@ public partial class Console : Control
 					}
 					break;
 				case "kill":
-					if (GameWarden.Instance == null)
-						Post("Not in a game");
-					else if (GameWarden.Instance.LocalPlayer == null)
-						Post("Not alive");
-					else GameWarden.Instance.LocalPlayer.ReSpawn();
+					if (GetPlayer())
+						GameWarden.Instance.LocalPlayer.ReSpawn();
+					break;
+				case "give bow":
+					if (GetPlayer())
+						GameWarden.Instance.LocalPlayer.Inventory.SetWeapon(WeaponType.BOW);
+					break;
+				case "give rocket":
+					if (GetPlayer())
+						GameWarden.Instance.LocalPlayer.Inventory.SetWeapon(WeaponType.ROCKET_LAUNCHER);
 					break;
 				case "version":
 					Post(Constants.Instance.VERSION);
 					break;
 				// Cheats
 				case "float 1":
-					Player.Gravity = 0f;
+					if (GetPlayer())
+						GameWarden.Instance.LocalPlayer.Gravity = 0f;
 					break;
 				case "float 0":
-					Player.Gravity = 20f;
+					if (GetPlayer())
+						GameWarden.Instance.LocalPlayer.Gravity = 20f;
 					break;
 				case "debug":
 					DebugEnabled = true;
@@ -103,6 +110,20 @@ public partial class Console : Control
 				Post("No one else is online.");
 		}
 		closeConsole();
+	}
+	public bool GetPlayer()
+	{
+		if (GameWarden.Instance == null)
+		{
+			Post("Not in a game");
+			return false;
+		}
+		if (GameWarden.Instance.LocalPlayer == null)
+		{
+			Post("Not alive");
+			return false;
+		}
+		return true;
 	}
 
 	public void Post(string message, bool DebugMessage = false)

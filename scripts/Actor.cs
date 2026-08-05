@@ -5,6 +5,7 @@ using GodotSteam;
 public partial class Actor : Character
 {
     [Export] public Label nameTag;
+	[Export] public Weapon weapon;
     [Export] CapsuleMesh Mesh;
     [Export] CsgShape3D CSGShape;
     [Export] Node3D Neck;

@@ -5,6 +5,7 @@ using GodotSteam;
 public partial class Player : Character
 {
 	[Export] public CameraEffects Camera;
+	[Export] public Inventory Inventory;
 	[Export] RayCast3D KickRayCast;
 	[Export] RayCast3D WallReader;
 	[Export] RayCast3D GroundReader;
@@ -33,7 +34,7 @@ public partial class Player : Character
 	public const float SlideForce = 5f;
 	public const float SlopeForce = 10f;
 	public const float WallDirectionInfluence = 0.4f;
-	public static float Gravity = 20;
+	public float Gravity = 20;
 	Buffer jump = new(0.125f);
 	Buffer coyoteTime = new(0.125f);
 	Gated jumpCoolDown = new(0.125f);

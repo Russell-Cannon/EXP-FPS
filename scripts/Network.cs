@@ -85,7 +85,10 @@ public partial class Network : Node
 				GameWarden.Instance?.TakeDamage((ulong)dictionary["target"], (int)dictionary["damage"]);
 				break;
 			case "projectile":
-				GameWarden.Instance?.SpawnProjectile((Vector3)dictionary["direction"], (AmmoType)(int)dictionary["ammo_type"], author);
+				if (dictionary.ContainsKey("property"))
+					GameWarden.Instance?.SpawnProjectile(author, (Vector3)dictionary["direction"], (AmmoType)(int)dictionary["ammo_type"], (float)dictionary["property"]);
+				else 
+					GameWarden.Instance?.SpawnProjectile(author, (Vector3)dictionary["direction"], (AmmoType)(int)dictionary["ammo_type"], -1);
 				break;
 		}
 	}

@@ -1,20 +1,27 @@
 using Godot;
 using System;
 
+public enum WeaponType
+{
+    ROCKET_LAUNCHER,
+    BOW
+};
+
 public partial class Weapon : RayCast3D
 {
-    [Export] public Character owner;
+    [Export] public Node3D SpawnPoint;
+    public Character owner;
 
     public virtual void Shoot(AmmoType type)
     {
         Vector3 dir = -GlobalBasis.Z;
         if (IsColliding())
-            dir = GlobalPosition.DirectionTo(GetCollisionPoint());
+            dir = SpawnPoint.GlobalPosition.DirectionTo(GetCollisionPoint());
 
-        SpawnProjectile(dir, type);
+        SpawnProjectile(dir, type, -1);
         GameWarden.Instance?.TellSpawnProjectile(dir, type);
     }
-    public virtual void SpawnProjectile(Vector3 direction, AmmoType type)
+    public virtual Ammunition SpawnProjectile(Vector3 direction, AmmoType type, float property)
     {
         //Instance projectile
         Ammunition projectile = Constants.Instance.AMMO_TYPES[(int)type].Instantiate<Ammunition>();
@@ -22,7 +29,13 @@ public partial class Weapon : RayCast3D
         projectile.Author = owner.ID;
 
         //Set path
-        projectile.GlobalPosition = GlobalPosition;
+        projectile.GlobalPosition = SpawnPoint.GlobalPosition;
         projectile.Direction = direction;
+
+        //Set properties
+        if (type == AmmoType.ARROW)
+            (projectile as Arrow).Strength = property;
+
+        return projectile;
     }
 }

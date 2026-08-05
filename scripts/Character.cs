@@ -7,7 +7,6 @@ public partial class Character : CharacterBody3D
     public PlayerStateMachine.State State;
 	[Export] public CollisionShape3D Collider;
 	[Export] public CapsuleShape3D Shape;
-	[Export] public Weapon weapon;
     public ulong ID { get; private set;}
     public virtual void SetID(ulong id)
     {

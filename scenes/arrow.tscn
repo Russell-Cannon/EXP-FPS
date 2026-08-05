@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://cb51f26adhxeu"]
+
+[ext_resource type="Script" uid="uid://cbt77ay163wj8" path="res://scripts/Arrow.cs" id="1_umosx"]
+[ext_resource type="PackedScene" uid="uid://dueexdhm57xyi" path="res://scenes/arrow_debris.tscn" id="2_23jat"]
+
+[node name="arrow" type="Node3D" unique_id=2016927410 node_paths=PackedStringArray("RayCast", "Model")]
+script = ExtResource("1_umosx")
+RayCast = NodePath("RayCast3D")
+Debris = ExtResource("2_23jat")
+Model = NodePath("arrowDebris")
+
+[node name="arrowDebris" parent="." unique_id=1701342559 instance=ExtResource("2_23jat")]
+
+[node name="RayCast3D" type="RayCast3D" parent="." unique_id=801269976]
+hit_back_faces = false
+
+[node name="Timer" type="Timer" parent="." unique_id=55376483]
+wait_time = 30.0
+one_shot = true
+autostart = true
+
+[connection signal="timeout" from="Timer" to="." method="queue_free"]

@@ -8,6 +8,7 @@ public partial class HeldInput : Node
     public bool HeldLongEnough = false;
     private Timer timer = null;
     public event Action ShortPress;
+    public event Action<float> EarlyRelease;
     public event Action HeldLong;
     public event Action LongPress;
     public HeldInput(string inputName, float window)
@@ -31,6 +32,8 @@ public partial class HeldInput : Node
 
     public override void _Input(InputEvent @event)
     {
+		if (Game.Instance.IsMouseFree()) return;
+        
         if (Input.IsActionJustPressed(InputName)) {
             //start timer
             HeldLongEnough = false;
@@ -43,6 +46,7 @@ public partial class HeldInput : Node
             } else {
                 //call short
                 ShortPress?.Invoke();
+                EarlyRelease?.Invoke(1f - (float)(timer.TimeLeft / timer.WaitTime));
                 timer?.Stop();
             }
         }

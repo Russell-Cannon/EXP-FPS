@@ -9,6 +9,7 @@ public partial class ExplodingRocket : Rocket
     [Export] public Curve DamageFallOff;
     public float FriendlyFireMultiplier = 0.7f;
     public override float Speed {get;} = 50f;
+    public virtual float KnockBack {get;} = 12.5f;
 
     public override void DealDamage()
     {
