@@ -53,6 +53,7 @@ public partial class Player : Character
 			WallRunTime.Cancel();
 			Camera.EndLean();
 		};
+		StateMachine.OnUpdate += (PlayerStateMachine.State newState) => {State = newState;};
     }
 	
     public override void _Input(InputEvent @event) {
@@ -191,7 +192,7 @@ public partial class Player : Character
 
 		// if we are trying to jump mid air
 		if (!coyoteTime.Active && jump.Active) {
-			if (VaultReader.IsColliding()) {
+			if (AbleToVault()) {
 				Vault();
 				jump.Cancel();
 			} else if (canStall.Use()) {
@@ -331,11 +332,14 @@ public partial class Player : Character
 		// Redirect speed
 		Velocity = new Vector3(GetDesiredDirection().X * speed * penalty, Velocity.Y, GetDesiredDirection().Z * speed * penalty);
 	}
+	public bool AbleToVault()
+	{
+		if (!VaultReader.IsColliding()) return false;
+		if (VaultReader.GetCollisionNormal().Dot(Vector3.Up) < 0.7f) return false; //trying to vault to a wall		
+		return true;
+	}
 	public void Vault()
 	{
-		if (!VaultReader.IsColliding()) return;
-		if (VaultReader.GetCollisionNormal().Dot(Vector3.Up) < 0.7f) return; //trying to vault to a wall
-
 		Camera.Vault(VaultReader.GetCollisionPoint());
 		GlobalPosition = VaultReader.GetCollisionPoint();
 	}

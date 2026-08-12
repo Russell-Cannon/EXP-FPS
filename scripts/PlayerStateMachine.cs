@@ -26,6 +26,7 @@ public partial class PlayerStateMachine
     public event Action StartWallRun;
     public event Action StopWallRun;
     public event Action Land;
+    public event Action<State> OnUpdate;
     public State CurrentState = State.Airborne;
     public void Set(State state) {
         // Restrict some transitions
@@ -41,6 +42,7 @@ public partial class PlayerStateMachine
             Land?.Invoke();
 
         // Allow the state to transition
+        if (CurrentState != state) OnUpdate?.Invoke(state);
         CurrentState = state;
     }
     public void Tick(float delta) {

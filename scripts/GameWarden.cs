@@ -74,6 +74,7 @@ public partial class GameWarden : Node
     public void DealDamage(ulong TargetID, int Damage)
     {
         if (Damage == 0) return;
+        if (GetCharacter(TargetID).State == PlayerStateMachine.State.Stalling) return; //do not do damage
 
         //Tell everyone else to make this update
         Network.Instance.SendPacketToAll(new Dictionary() {
