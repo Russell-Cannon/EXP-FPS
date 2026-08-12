@@ -385,12 +385,14 @@ public partial class Player : Character
 		Shape.Height = 1;
 		Collider.Position = new Vector3(0, 1.5f, 0);
 		GroundReader.Position = new Vector3(0, 1.0f, 0);
+		Camera.Crouch();
 	}
 	public void Stand() {
 		GlobalPosition += Vector3.Up;
 		Shape.Height = 2;
 		Collider.Position = new Vector3(0, 1.0f, 0);
 		GroundReader.Position = Vector3.Zero;
+		Camera.Stand();
 	}
 	public void ResetState()
 	{

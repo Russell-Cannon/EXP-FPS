@@ -38,12 +38,12 @@ public partial class CameraEffects : Camera3D
         Position = Lerp.LerpHalfLife(Position, BasePosition, (float)delta, .1f/Friction);
 
         //Clip position
-        if (Position.DistanceTo(BasePosition) > 0.5f * TranslationStrength)
-            Position = BasePosition.DirectionTo(Position).Normalized() * 0.5f * TranslationStrength + BasePosition;
+        if (Position.DistanceTo(BasePosition) > 1.5f * TranslationStrength)
+            Position = BasePosition.DirectionTo(Position).Normalized() * 1.5f * TranslationStrength + BasePosition;
     }
     public void Land(float force)
     {
-        AddForce(Vector3.Up * force);
+        AddForce(Vector3.Up * force / 3f);
     }
     public void Jump() {}
     public void Lean(Vector3 WallNormal)
@@ -58,9 +58,18 @@ public partial class CameraEffects : Camera3D
     {
         GlobalPosition = player.GlobalPosition + BasePosition - player.GlobalPosition.DirectionTo(Point) * player.GlobalPosition.DistanceTo(Point);
     }
+    public void Crouch()
+    {
+        GlobalPosition = player.GlobalPosition + BasePosition + Vector3.Up;
+        AddForce(Vector3.Down*2f);
+    }
+    public void Stand()
+    {
+        GlobalPosition = player.GlobalPosition + BasePosition + Vector3.Down;
+        AddForce(Vector3.Up*2f);
+    }
     public void AddForce(Vector3 Force)
     {
-        Velocity += Force/3f;
+        Velocity += Force;
     }
-
 }
