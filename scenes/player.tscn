@@ -25,7 +25,7 @@ Inventory = NodePath("Inventory")
 KickRayCast = NodePath("camera/KickRayCast")
 WallReader = NodePath("WallReader")
 GroundReader = NodePath("GroundReader")
-StepUpReader = NodePath("StepUpReader")
+StepUpReader = NodePath("")
 HeadSpaceReader = NodePath("HeadSpaceReader")
 VaultReader = NodePath("VaultReader")
 Collider = NodePath("shape")
@@ -56,12 +56,6 @@ target_position = Vector3(1, 0, 0)
 
 [node name="GroundReader" type="RayCast3D" parent="." unique_id=1019082198]
 target_position = Vector3(0, -0.22, 0)
-
-[node name="StepUpReader" type="RayCast3D" parent="." unique_id=486518457]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.7)
-top_level = true
-target_position = Vector3(0, -0.4, 0)
-hit_back_faces = false
 
 [node name="HeadSpaceReader" type="RayCast3D" parent="." unique_id=1464072335]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)

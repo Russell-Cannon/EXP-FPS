@@ -9,7 +9,6 @@ public partial class Player : Character
 	[Export] RayCast3D KickRayCast;
 	[Export] RayCast3D WallReader;
 	[Export] RayCast3D GroundReader;
-	[Export] RayCast3D StepUpReader;
 	[Export] RayCast3D HeadSpaceReader;
 	[Export] RayCast3D VaultReader;
 	public Vector2 MoveInput;
@@ -202,7 +201,6 @@ public partial class Player : Character
 			}
 		}
 
-		StepUp(delta);
 		//Accelerate if not going as fast as possible
 		if (GetSpeed() < MaxSpeed) {
 			Accelerate(GetDesiredDirection(), delta, Acceleration * AirControlMultiplier);
@@ -221,7 +219,6 @@ public partial class Player : Character
 			if (jumpCoolDown.Ready)
 				coyoteTime.Set();
 
-			StepUp(delta);
 			Accelerate(GodotMath.AlignUpToNormal(groundSurfaceNormal, GetDesiredDirection()), delta);
 			
 			if (Input.IsActionPressed("move_slide"))
@@ -333,21 +330,6 @@ public partial class Player : Character
 
 		// Redirect speed
 		Velocity = new Vector3(GetDesiredDirection().X * speed * penalty, Velocity.Y, GetDesiredDirection().Z * speed * penalty);
-	}
-	public void StepUp(float delta)
-	{
-		//Set stepup reader's position
-		StepUpReader.GlobalPosition = GodotMath.AlignUpToNormal(groundSurfaceNormal, GetDesiredDirection())*0.7f + groundSurfaceNormal*0.5f + GlobalPosition;
-		StepUpReader.TargetPosition = -groundSurfaceNormal*0.4f;
-
-		//Check if its possible
-		if (!StepUpReader.IsColliding()) return; //if not colliding
-		if (StepUpReader.GetCollisionPoint().Y <= GlobalPosition.Y) return; //if point is lower than we are
-		if (StepUpReader.GetCollisionNormal().Dot(groundSurfaceNormal) < 0.25f) return; //if surface is too perpendicular to our current spot
-		if (GodotMath.XZ(Velocity * delta * 3, groundSurfaceNormal).Project((StepUpReader.GetCollisionPoint() - GlobalPosition).Normalized()).Length() < 0.7f - 0.5f) return; //if are not going fast enough to land on the surface after stepping up
-
-		//move body up
-		GlobalPosition = new Vector3(GlobalPosition.X, StepUpReader.GetCollisionPoint().Y, GlobalPosition.Z);
 	}
 	public void Vault()
 	{
