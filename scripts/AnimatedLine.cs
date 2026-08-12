@@ -13,6 +13,12 @@ public partial class AnimatedLine : LineRenderer
     float distanceScale = 2f;
     public override void _Process(double delta)
     {
+        if (!IsInstanceValid(TargetPosition))
+        {
+            QueueFree();
+            return;
+        }
+
         Points.Clear();
 
         //Add <density> points per meter between position and target

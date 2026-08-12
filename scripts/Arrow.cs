@@ -3,9 +3,9 @@ using System;
 
 public partial class Arrow : Rocket
 {
-    public float Gravity = 0;
     public float Strength = 1f;
     public override int Damage {get;} = 105;
+    float AppliedGravity = 0;
     public override void _Process(double delta)
     {
         if (GetVelocity().LengthSquared() < 0.01f) //don't update
@@ -22,7 +22,7 @@ public partial class Arrow : Rocket
     public override void _PhysicsProcess(double delta)
     {
         base._PhysicsProcess(delta);
-        Gravity += 20f*(float)delta;
+        AppliedGravity += 20f*(float)delta;
     }
     public override void SpawnDecal()
     {
@@ -32,8 +32,9 @@ public partial class Arrow : Rocket
 
     public override Vector3 GetVelocity()
     {
-        return Direction*Speed*Strength + Gravity*Vector3.Down;
+        return Direction*Speed*Strength + AppliedGravity*Vector3.Down;
     }
+
     public override void DealDamage()
     {
         if (RayCast.GetCollider() is Character)

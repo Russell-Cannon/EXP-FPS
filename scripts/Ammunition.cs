@@ -4,7 +4,8 @@ public enum AmmoType
 {
     EXPLODING_ROCKET,
     ROCKET,
-    ARROW
+    ARROW,
+    TETHERED_ARROW
 };
 
 public partial class Ammunition : Node3D

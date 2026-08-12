@@ -7,6 +7,7 @@
 [ext_resource type="PackedScene" uid="uid://dki32yqltngs" path="res://scenes/explodingRocket.tscn" id="5_p1qcw"]
 [ext_resource type="PackedScene" uid="uid://bfowv44c6edvj" path="res://scenes/rocket.tscn" id="6_syyxb"]
 [ext_resource type="PackedScene" uid="uid://cb51f26adhxeu" path="res://scenes/arrow.tscn" id="7_obdgl"]
+[ext_resource type="PackedScene" uid="uid://bn2m85vh1hnr6" path="res://scenes/tethered_arrow.tscn" id="8_lgjt7"]
 [ext_resource type="PackedScene" uid="uid://b8mnkxyr5neve" path="res://scenes/rocket_launcher.tscn" id="8_nn782"]
 [ext_resource type="PackedScene" uid="uid://bw2xhbmcg45aw" path="res://scenes/bow.tscn" id="9_lgjt7"]
 
@@ -15,5 +16,5 @@ script = ExtResource("1_2mmdi")
 PLAYER_SCENE = ExtResource("2_msull")
 ACTOR_SCENE = ExtResource("3_2ghsw")
 GYM_SCENE = ExtResource("4_n5863")
-AMMO_TYPES = Array[PackedScene]([ExtResource("5_p1qcw"), ExtResource("6_syyxb"), ExtResource("7_obdgl")])
+AMMO_TYPES = Array[PackedScene]([ExtResource("5_p1qcw"), ExtResource("6_syyxb"), ExtResource("7_obdgl"), ExtResource("8_lgjt7")])
 WEAPON_TYPES = Array[PackedScene]([ExtResource("8_nn782"), ExtResource("9_lgjt7")])

@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://6jnhtag2ywso"]
+
+[ext_resource type="Script" uid="uid://cm4qv4rp3t01x" path="res://scripts/Tether.cs" id="1_kkhfb"]
+[ext_resource type="Script" uid="uid://do07tr3ivuote" path="res://scripts/LineRenderer.cs" id="2_ge5rj"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_ge5rj"]
+size = Vector2(0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ge5rj"]
+
+[node name="arrowDebris" type="Node3D" unique_id=1701342559 node_paths=PackedStringArray("Cable")]
+script = ExtResource("1_kkhfb")
+Cable = NodePath("Cable")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="." unique_id=1649092763]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
+radius = 0.05
+height = 0.5
+
+[node name="Cable" type="MeshInstance3D" parent="." unique_id=63645355]
+mesh = SubResource("QuadMesh_ge5rj")
+script = ExtResource("2_ge5rj")
+MeshMaterial = SubResource("StandardMaterial3D_ge5rj")
+Thickness = 0.1

@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://bn2m85vh1hnr6"]
+
+[ext_resource type="Script" uid="uid://oavukeoqiyvv" path="res://scripts/TetheredArrow.cs" id="1_8fs1b"]
+[ext_resource type="PackedScene" uid="uid://dueexdhm57xyi" path="res://scenes/arrow_debris.tscn" id="2_8fs1b"]
+[ext_resource type="PackedScene" uid="uid://6jnhtag2ywso" path="res://scenes/tether.tscn" id="2_785bc"]
+[ext_resource type="Script" uid="uid://1vwkcgtb83in" path="res://scripts/AnimatedLine.cs" id="4_785bc"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_785bc"]
+size = Vector2(0.1, 1)
+
+[sub_resource type="Curve" id="Curve_p6v03"]
+_data = [Vector2(0, 0), 0.0, 6.5722847, 0, 0, Vector2(1, 0), -0.016446216, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="Curve" id="Curve_ync8i"]
+_limits = [0.0, 1.0, 0.0, 4.0]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(4, 0), -0.65880424, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_785bc"]
+
+[node name="arrow" type="Node3D" unique_id=2016927410 node_paths=PackedStringArray("Cable", "RayCast", "Model")]
+script = ExtResource("1_8fs1b")
+Cable = NodePath("Cable")
+RayCast = NodePath("RayCast3D")
+Debris = ExtResource("2_785bc")
+Model = NodePath("arrowDebris")
+
+[node name="arrowDebris" parent="." unique_id=1701342559 instance=ExtResource("2_8fs1b")]
+
+[node name="RayCast3D" type="RayCast3D" parent="." unique_id=801269976]
+hit_back_faces = false
+
+[node name="Timer" type="Timer" parent="." unique_id=55376483]
+wait_time = 2.0
+one_shot = true
+autostart = true
+
+[node name="Cable" type="MeshInstance3D" parent="." unique_id=63917337 node_paths=PackedStringArray("TargetPosition")]
+mesh = SubResource("QuadMesh_785bc")
+script = ExtResource("4_785bc")
+TargetPosition = NodePath("../arrowDebris")
+InfluenceOverDistance = SubResource("Curve_p6v03")
+InfluenceOverTime = SubResource("Curve_ync8i")
+MeshMaterial = SubResource("StandardMaterial3D_785bc")
+Thickness = 0.1
+
+[connection signal="timeout" from="Timer" to="." method="queue_free"]

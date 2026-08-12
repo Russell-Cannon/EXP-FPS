@@ -25,15 +25,15 @@ public partial class Weapon : RayCast3D
     {
         //Instance projectile
         Ammunition projectile = Constants.Instance.AMMO_TYPES[(int)type].Instantiate<Ammunition>();
-        GameWarden.Instance?.AddChild(projectile);
         projectile.Author = owner.ID;
+        GameWarden.Instance?.AddChild(projectile);
 
         //Set path
         projectile.GlobalPosition = SpawnPoint.GlobalPosition;
         projectile.Direction = direction;
 
         //Set properties
-        if (type == AmmoType.ARROW)
+        if (type == AmmoType.ARROW || type == AmmoType.TETHERED_ARROW)
             (projectile as Arrow).Strength = property;
 
         return projectile;

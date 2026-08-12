@@ -7,7 +7,7 @@ public partial class Inventory : Node
     public Weapon currentWeapon;
     public override void _Ready()
     {
-        SetWeapon(WeaponType.ROCKET_LAUNCHER);
+        SetWeapon(WeaponType.BOW);
     }
     public void SetWeapon(WeaponType weaponType)
     {

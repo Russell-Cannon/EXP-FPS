@@ -10,15 +10,13 @@ public partial class Rocket : Ammunition
         if (RayCast.IsColliding())
         {
             GlobalPosition = RayCast.GetCollisionPoint();
-            //Spawn decal
-            SpawnDecal();
-
             //Do damage
             DealDamage();
-            
-            //Delete
-            QueueFree();
-        } else
+
+            //Spawn Decal and Delete
+            HandleCollision();
+        } 
+        else
         {
             GlobalPosition += GetVelocity()*(float)delta;
             UpdateRayCast((float)delta);
@@ -33,6 +31,13 @@ public partial class Rocket : Ammunition
         Vector3 dir = GetVelocity().Normalized();
         RayCast.GlobalPosition = GlobalPosition - dir*Radius;
         RayCast.TargetPosition = GetVelocity()*delta + dir*Radius*2f;
+    }
+    public virtual void HandleCollision()
+    {
+        SpawnDecal();
+
+        //Delete
+        QueueFree();
     }
     public virtual void SpawnDecal()
     {
