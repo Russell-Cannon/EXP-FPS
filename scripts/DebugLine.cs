@@ -32,8 +32,6 @@ public partial class DebugLine : MeshInstance3D
         
         GlobalPosition = Vector3.Zero;
 
-        mesh.ClearSurfaces();
-
         foreach (Vector3[] Line in Lines)
         {
             mesh.SurfaceBegin(Mesh.PrimitiveType.TriangleStrip, meshMaterial);
